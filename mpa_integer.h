@@ -148,9 +148,7 @@ namespace MPA
                 carry += current_carry;
             }
             for (size_t i = smaller_head + 1; i <= bigger_head; ++i)
-            {
                 total_diff_head = (total_diff[i] = sub_underflow(bigger[i], carry, carry)) ? i : total_diff_head;
-            }
         }
 
         template <typename word_t>
