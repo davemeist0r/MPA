@@ -225,10 +225,7 @@ namespace MPA
         bool validate_input_string(const std::string &input, int base) noexcept
         {
             if (base != 2 && base != 10 && base != 16)
-            {
-                std::cerr << "WARNING: base " << base << " is not supported.\n";
-                return false;
-            }
+                return std::cerr << "WARNING: base " << base << " is not supported.\n", false;
             const size_t start_index = [&base, &input]()
             {
                 if (base != 10)
@@ -421,11 +418,10 @@ namespace MPA
                                            !check_l ? l_high_size : l_low_size, !check_l ? l_low_size : l_high_size, sum_l);
             const bool carry_r = add_words(!check_r ? r_high : r_low, !check_r ? r_low : r_high,
                                            !check_r ? r_high_size : r_low_size, !check_r ? r_low_size : r_high_size, sum_r);
-            z1_size -= !carry_r + !carry_l;
-            sum_l_size -= !carry_l;
-            sum_r_size -= !carry_r;
+            z1_size -= !carry_r + !carry_l, sum_l_size -= !carry_l, sum_r_size -= !carry_r;
             multiply_karatsuba(sum_l, sum_r, sum_l_size, sum_r_size, z1), inplace_decrement(z1, z0, l_low_size + r_low_size);
-            z2 ? (multiply_karatsuba(l_high, r_high, l_high_size, r_high_size, z2), inplace_decrement(z1, z2, l_high_size + r_high_size), inplace_increment(out + m, z1, lsize + rsize - m < z1_size ? lsize + rsize - m : z1_size))
+            z2 ? (multiply_karatsuba(l_high, r_high, l_high_size, r_high_size, z2), inplace_decrement(z1, z2, l_high_size + r_high_size),
+                  inplace_increment(out + m, z1, lsize + rsize - m < z1_size ? lsize + rsize - m : z1_size))
                : inplace_increment(out + m, z1, lsize + rsize - m < z1_size ? lsize + rsize - m : z1_size);
             dont_require_allocation ? (void)(karatsuba_buffer_offset -= needed_scratch_words) : free(z1);
         }
@@ -464,8 +460,7 @@ namespace MPA
             word_t *sum_l = z1 + z1_size;
             square_karatsuba(l_low, l_low_size, z0);
             const bool carry_l = add_words(l_high, l_low, l_high_size, l_low_size, sum_l);
-            z1_size -= 2 * (!carry_l);
-            sum_l_size -= !carry_l;
+            z1_size -= 2 * (!carry_l), sum_l_size -= !carry_l;
             square_karatsuba(sum_l, sum_l_size, z1), inplace_decrement(z1, z0, 2 * l_low_size);
             square_karatsuba(l_high, l_high_size, z2), inplace_decrement(z1, z2, 2 * l_high_size);
             inplace_increment(out + m, z1, 2 * lsize - m < z1_size ? 2 * lsize - m : z1_size);

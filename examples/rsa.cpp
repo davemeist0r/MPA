@@ -13,7 +13,11 @@
 
 #include "../mpa_integer.h"
 
+#ifdef __SIZEOF_INT128__
 using word_t = uint64_t;
+#else
+using word_t = uint32_t;
+#endif
 
 /*
     Version ::= INTEGER { two-prime(0), multi(1) }
