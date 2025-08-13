@@ -435,9 +435,7 @@ bool parse_rsa_public_key(const std::vector<uint8_t> &rsa_public_key_bytes, MPA:
                                 (b64_decoded[offset + 3]);
     offset += 4;
     modulus = construct_integer_from_bigendian_bytebuffer(b64_decoded, modulus_size, offset);
-    if (offset != b64_decoded.size())
-        return false;
-    return true;
+    return offset == b64_decoded.size();
 }
 
 bool parse_rsa_private_key(const std::vector<uint8_t> &rsa_private_key_bytes, RSA &rsa)
