@@ -656,21 +656,12 @@ bool read_rsa_public_key_file(const std::string &filepath)
             tmp.push_back(character);
     }
     std::vector<uint8_t> b64;
-    size_t i;
-    for (i = 0; i < tmp.size(); ++i)
-    {
-        if (tmp[i] == ' ')
-            break;
-    }
-    for (size_t j = i + 1; j < tmp.size(); ++j)
-    {
-        if (tmp[j] == ' ')
-            break;
+    size_t i; // clang-format off
+    for (i = 0; i < tmp.size() && tmp[i] != ' '; ++i); // clang-format on
+    for (size_t j = i + 1; j < tmp.size() && tmp[j] != ' '; ++j)
         b64.push_back(tmp[j]);
-    }
     MPA::Integer<word_t> modulus, exponent;
-    bool success = parse_rsa_public_key(b64, exponent, modulus);
-    if (success)
+    if (parse_rsa_public_key(b64, exponent, modulus))
     {
         std::cout << "<<<RSA PUBLIC KEY DETAIL START>>>\n\n";
         std::cout
@@ -701,11 +692,8 @@ bool read_rsa_private_key_file(const std::string &filepath)
             b64.push_back(character);
     }
     RSA rsa;
-    bool success = parse_rsa_private_key(b64, rsa);
-    if (success)
-    {
+    if (parse_rsa_private_key(b64, rsa))
         return std::cout << rsa << "\n", true;
-    }
     return std::cerr << "ERROR: cannot parse private key\n", false;
 }
 
