@@ -11,7 +11,7 @@
 #include <iostream>
 #include <cstring>
 
-#include "../mpa_integer.h"
+#include "mpa_integer.h"
 
 #ifdef __SIZEOF_INT128__
 using word_t = uint64_t;
