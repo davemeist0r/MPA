@@ -350,7 +350,7 @@ struct RSA // two-prime only
         std::ofstream fs(outfile_name, std::ios::out | std::ios::binary);
         fs.write(prefix.data(), prefix.size());
         bytes_written += prefix.size();
-        fs.write(reinterpret_cast<const char *>(b64.data()), b64.size());
+        fs.write((const char *)b64.data(), b64.size());
         bytes_written += b64.size();
         fs.write(postfix.data(), postfix.size());
         bytes_written += postfix.size();
