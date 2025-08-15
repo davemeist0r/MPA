@@ -35,7 +35,7 @@ using word_t = uint32_t;
         exponent2         INTEGER,  -- d mod (q-1)
         coefficient       INTEGER,  -- (inverse of q) mod p
         otherPrimeInfos   OtherPrimeInfos OPTIONAL
-}
+    }
 */
 
 namespace
