@@ -161,10 +161,9 @@ namespace
 
     MPA::Integer<word_t> construct_integer_from_bigendian_bytebuffer(const std::vector<uint8_t> &bytebuffer, const size_t bytebuffer_size, size_t &offset)
     {
-        MPA::Integer<word_t> out = 0;
-        for (size_t i = 0; i < bytebuffer_size; ++i)
-            out += MPA::Integer<word_t>(bytebuffer[offset]) << ((bytebuffer_size - 1 - i) << 3U), offset += 1;
-        return out;
+        MPA::Integer<word_t> out = 0; // clang-format off
+        for (size_t i = 0; i < bytebuffer_size; out += MPA::Integer<word_t>(bytebuffer[offset]) << ((bytebuffer_size - 1 - i) << 3U), ++offset, ++i);
+        return out; // clang-format on
     }
 
     void serialize_tail(std::vector<uint8_t> &bytes, const MPA::Integer<word_t> &x)
@@ -666,7 +665,7 @@ bool read_rsa_public_key_file(const std::string &filepath)
         std::cout << "<<<RSA PUBLIC KEY DETAIL START>>>\n\n";
         std::cout
             << "encryption exponent:\n"
-            << exponent << "\n";
+            << exponent << "\n\n";
         std::cout << "modulus:\n"
                   << modulus << "\n\n";
         std::cout << "<<<RSA PUBLIC KEY DETAIL END>>>\n\n";
