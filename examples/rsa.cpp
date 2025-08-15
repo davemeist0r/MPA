@@ -668,7 +668,7 @@ bool read_rsa_public_key_file(const std::string &filepath)
             << "encryption exponent:\n"
             << exponent << "\n";
         std::cout << "modulus:\n"
-                  << modulus << "\n";
+                  << modulus << "\n\n";
         std::cout << "<<<RSA PUBLIC KEY DETAIL END>>>\n\n";
         return true;
     }
