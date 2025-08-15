@@ -733,8 +733,8 @@ int main(int argc, char **argv)
             return std::cerr << "Provided bitlength " << bitlength << " is too short.\n",
                    std::cerr << "Must be at least 512. Abort.\n", 1;
 
-        const std::string private_key_file_name = "example.rsa";
-        const std::string public_key_file_name = "example.rsa.pub";
+        const std::string private_key_file_name = (argc == 4) ? argv[3] : "example.rsa";
+        const std::string public_key_file_name = private_key_file_name + ".pub";
 
         std::cout << "generating rsa key\n";
         std::cout << "bitlength: " << bitlength << "\n";
