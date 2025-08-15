@@ -2,6 +2,7 @@
 Multi-Precision-Arithmetic
 
 # Usage
+0) Make sure your compiler supports C++17 (the recommended compiler -especially on Windows- is Clang).
 1) Add the single header file "mpa_integer.h" to your include path.
 2) Compile your project as usual.
 
