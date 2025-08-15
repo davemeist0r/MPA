@@ -412,7 +412,7 @@ int main()
     std::cout << "wordtype uint16_t OK\n";
     test_integer<uint32_t>();
     std::cout << "wordtype uint32_t OK\n";
-#ifdef __SIZEOF_INT128__
+#if defined(__SIZEOF_INT128__) && !defined(_MSC_VER)
     test_integer<uint64_t>();
     std::cout << "wordtype uint64_t OK\n";
 #endif

@@ -271,7 +271,7 @@ namespace MPA
             static_assert(false, "unsupported wordtype !");
         };
 
-#ifdef __SIZEOF_INT128__
+#if defined(__SIZEOF_INT128__) && !defined(_MSC_VER)
         template <>
         struct DWord<uint64_t>
         {
@@ -886,7 +886,7 @@ namespace MPA
     template <typename word_t>
     class Integer
     {
-#ifdef __SIZEOF_INT128__
+#if defined(__SIZEOF_INT128__) && !defined(_MSC_VER)
         static_assert(std::is_same_v<word_t, uint64_t> || std::is_same_v<word_t, uint32_t> || std::is_same_v<word_t, uint16_t>,
                       "Only wordtypes uint16_t, uint32_t and uint64_t are supported on your platform.");
 #else
