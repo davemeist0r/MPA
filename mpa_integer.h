@@ -539,41 +539,25 @@ namespace MPA
                       bool need_remainder = false) noexcept
         {
             if (l_head < y_head)
-            {
-                if (need_remainder)
-                    return (copy_words(output, l_words, l_head + 1), l_head << 2U);
-                *output = 0;
-                return 0;
-            }
+                return (need_remainder) ? (copy_words(output, l_words, l_head + 1), l_head << 2U) : (*output = 0, 0);
             using dword_t = typename DWord<word_t>::type;
             const auto div_two_doublewords_by_one_doubleword = [](const dword_t &AH, const dword_t &AL, const dword_t &B, word_t *q)
             {
+                bool overflow;
+                const dword_t overflow_barrier =
+                    ((std::numeric_limits<word_t>::max()) | (dword_t)(std::numeric_limits<word_t>::max()) << BitsInWord<word_t>::value) - B;
                 const word_t b1 = B >> BitsInWord<word_t>::value;
                 dword_t q_tmp = AH / b1;
                 dword_t D = q_tmp * (B & std::numeric_limits<word_t>::max());
                 dword_t tmp = (AL >> BitsInWord<word_t>::value) | ((AH - q_tmp * b1) << BitsInWord<word_t>::value);
-                const dword_t overflow_barrier =
-                    ((std::numeric_limits<word_t>::max()) | (dword_t)(std::numeric_limits<word_t>::max()) << BitsInWord<word_t>::value) - B;
                 if (tmp < D)
-                {
-                    q_tmp -= 1;
-                    const bool overflow = tmp > overflow_barrier;
-                    tmp += B;
-                    if (!overflow && tmp < D)
-                        tmp += (q_tmp -= 1, B);
-                }
-                q[1] = q_tmp;
+                    overflow = tmp > overflow_barrier, q_tmp -= 1, tmp += B, tmp += (!overflow && tmp < D) ? (q_tmp -= 1, B) : 0;
                 const dword_t R = tmp - D;
-                q_tmp = R / b1;
+                q[1] = q_tmp, q_tmp = R / b1;
                 D = q_tmp * (B & std::numeric_limits<word_t>::max());
                 tmp = (AL & std::numeric_limits<word_t>::max()) | ((R - q_tmp * b1) << BitsInWord<word_t>::value);
                 if (tmp < D)
-                {
-                    q_tmp -= 1;
-                    const bool overflow = tmp > overflow_barrier;
-                    tmp += B;
-                    q_tmp -= (!overflow && tmp < D);
-                }
+                    overflow = tmp > overflow_barrier, q_tmp -= 1, tmp += B, q_tmp -= (!overflow && tmp < D);
                 q[0] = q_tmp;
             };
             const size_t backshift =
@@ -616,20 +600,15 @@ namespace MPA
                         remainder_ptr[2 * i - 2] | ((dword_t)remainder_ptr[2 * i - 1] << BitsInWord<word_t>::value), divisor, q_words);
                 // first pass of adjusting the estimate
                 word_t estimate_checker_words[6] = {0};
-
                 mul_4_by_2(y_checker_words, q_words, estimate_checker_words);
                 bool comp = compare_words(estimate_checker_words, remainder_ptr + 2 * i - 4, 6);
                 bool underflow = q_words[0] < comp;
-                q_words[0] -= comp;
-                q_words[1] -= underflow;
+                q_words[0] -= comp, q_words[1] -= underflow;
                 inplace_decrement(estimate_checker_words, y_checker_words, comp ? 4 : 0);
                 comp = compare_words(estimate_checker_words, remainder_ptr + 2 * i - 4, 6);
                 underflow = q_words[0] < comp;
-                q_words[0] -= comp;
-                q_words[1] -= underflow;
-                shifted_yabs_size -= 2;
-                shifted_yabs_ptr += 2;
-                shifted_remainder_correction_ptr -= 2;
+                q_words[0] -= comp, q_words[1] -= underflow;
+                shifted_yabs_size -= 2, shifted_yabs_ptr += 2, shifted_remainder_correction_ptr -= 2;
                 clear_words(shifted_remainder_correction_ptr, words_to_clear);
                 multiply_by_doubleword(q_words, initial_yabs_ptr, t, shifted_remainder_correction_ptr);
                 // second pass of adjusting the estimate
@@ -639,9 +618,7 @@ namespace MPA
                 if (j < words_to_clear && remainder_ptr[remainder_correction_size - 1 - j] <
                                               remainder_correction_ptr[remainder_correction_size - 1 - j])
                 {
-                    underflow = !q_words[0];
-                    q_words[0] -= 1;
-                    q_words[1] -= underflow;
+                    underflow = !q_words[0], q_words[0] -= 1, q_words[1] -= underflow;
                     inplace_decrement(remainder_correction_ptr, shifted_yabs_ptr, shifted_yabs_size);
                 }
                 // finally, set the quotient words
@@ -665,16 +642,12 @@ namespace MPA
                 word_t tmp_words[6] = {0, 0, remainder_ptr[0], remainder_ptr[1], remainder_ptr[2], remainder_ptr[3]};
                 bool comp = compare_words(estimate_checker_words, tmp_words, 6);
                 bool underflow = q_words[0] < comp;
-                q_words[0] -= comp;
-                q_words[1] -= underflow;
+                q_words[0] -= comp, q_words[1] -= underflow;
                 inplace_decrement(estimate_checker_words, y_checker_words, comp ? 4 : 0);
                 comp = compare_words(estimate_checker_words, tmp_words, 6);
                 underflow = q_words[0] < comp;
-                q_words[0] -= comp;
-                q_words[1] -= underflow;
-                shifted_yabs_size -= 2;
-                shifted_yabs_ptr += 2;
-                shifted_remainder_correction_ptr -= 2;
+                q_words[0] -= comp, q_words[1] -= underflow;
+                shifted_yabs_size -= 2, shifted_yabs_ptr += 2, shifted_remainder_correction_ptr -= 2;
                 clear_words(shifted_remainder_correction_ptr, words_to_clear);
                 multiply_by_doubleword(q_words, initial_yabs_ptr, t, shifted_remainder_correction_ptr);
                 // second pass of adjusting the estimate
@@ -684,9 +657,7 @@ namespace MPA
                 if (j < words_to_clear && remainder_ptr[remainder_correction_size - 1 - j] <
                                               remainder_correction_ptr[remainder_correction_size - 1 - j])
                 {
-                    underflow = !q_words[0];
-                    q_words[0] -= 1;
-                    q_words[1] -= underflow;
+                    underflow = !q_words[0], q_words[0] -= 1, q_words[1] -= underflow;
                     inplace_decrement(remainder_correction_ptr, shifted_yabs_ptr, shifted_yabs_size);
                 }
                 // finally, set the quotient words
@@ -891,7 +862,7 @@ namespace MPA
                       "Only wordtypes uint16_t, uint32_t and uint64_t are supported on your platform.");
 #else
         static_assert(std::is_same_v<word_t, uint32_t> || std::is_same_v<word_t, uint16_t>,
-                      "Only wordtype uint16_t and uint32_t are supported on your platform.");
+                      "Only wordtypes uint16_t and uint32_t are supported on your platform.");
 #endif
         using signed_word_t = std::make_signed_t<word_t>;
 
@@ -911,8 +882,7 @@ namespace MPA
 
         Integer(const signed_word_t n) noexcept : words(nullptr), flags((n < 0) | 0b10)
         {
-            words = allocate_words<word_t>(1);
-            *words = n < 0 ? -n : n;
+            words = allocate_words<word_t>(1), *words = n < 0 ? -n : n;
         }
 
         Integer(const Integer &other) noexcept : words(nullptr), flags(0)
