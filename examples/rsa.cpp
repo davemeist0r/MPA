@@ -710,18 +710,18 @@ bool read_rsa_key_file(const std::string &filepath)
         return read_rsa_public_key_file(filepath);
 }
 
-void show_usage()
+void show_usage(char **argv)
 {
-    std::cerr << "USAGE: 1) <path-to-rsa-tool> generate <bitlength>\n";
+    std::cerr << "USAGE: 1) " << argv[0] << " generate <bitlength>\n";
     std::cerr << "          to generate a RSA key with 'bitlength' bits\n\n";
-    std::cerr << "       2) <path-to-rsa-tool> parse <filepath>\n";
+    std::cerr << "       2) " << argv[0] << " parse <filepath>\n";
     std::cerr << "          to parse a RSA public or private key at <filepath> \n";
 }
 
 int main(int argc, char **argv)
 {
     if (argc < 3)
-        return show_usage(), 1;
+        return show_usage(argv), 1;
     std::string generate = "generate";
     std::string parse = "parse";
     // check if we generate a key
@@ -758,5 +758,5 @@ int main(int argc, char **argv)
         return read_rsa_key_file(argv[2]) ? 0 : 1;
     // if not, show usage
     else
-        return show_usage(), 1;
+        return show_usage(argv), 1;
 }
