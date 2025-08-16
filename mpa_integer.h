@@ -161,36 +161,28 @@ namespace MPA
             size_t i = 0;
             for (i = l_head; i < l_head + 1 && l[i] == r[i]; --i);
             return i < l_head + 1 ? l[i] > r[i] : true;
-        } // clang-format on
+        }
 
-#define DO_ADD(l, r, bigger_head, smaller_head)                                                                 \
-    add_words(bigger_head == l.get_head() ? l.words : r.words, bigger_head == l.get_head() ? r.words : l.words, \
-              bigger_head + 1, smaller_head + 1, out_words);                                                    \
-    const size_t out_head = out_words[bigger_head + 1] ? bigger_head + 1 : bigger_head;                         \
-    const bool out_sign = l.is_negative();                                                                      \
-    return out_sign | (out_head << 2U) // no ownership
+        #define DO_ADD(l, r, bigger_head, smaller_head)                                                                                                                 \
+            add_words(bigger_head == l.get_head() ? l.words : r.words, bigger_head == l.get_head() ? r.words : l.words, bigger_head + 1, smaller_head + 1, out_words);  \
+            const size_t out_head = out_words[bigger_head + 1] ? bigger_head + 1 : bigger_head;                                                                         \
+            const bool out_sign = l.is_negative();                                                                                                                      \
+            return out_sign | (out_head << 2U) // no ownership
 
-#define DO_SUB(l, r, bigger_head, smaller_head)                                                                    \
-    const bool l_geq_r = l_abs_geq_r_abs(l.words, r.words, l.get_head(), r.get_head());                            \
-    size_t out_head = 0;                                                                                           \
-    subtract_words(l_geq_r ? l.words : r.words, l_geq_r ? r.words : l.words, bigger_head, smaller_head, out_words, \
-                   out_head);                                                                                      \
-    bool out_sign;                                                                                                 \
-    if (!out_head && !out_words[0])                                                                                \
-    {                                                                                                              \
-        out_sign = 0;                                                                                              \
-    }                                                                                                              \
-    else if (!l.is_negative())                                                                                     \
-    {                                                                                                              \
-        out_sign = !l_geq_r;                                                                                       \
-    }                                                                                                              \
-    else                                                                                                           \
-    {                                                                                                              \
-        out_sign = l_geq_r;                                                                                        \
-    }                                                                                                              \
-    return out_sign | (out_head << 2U) // no ownership
+        #define DO_SUB(l, r, bigger_head, smaller_head)                                                                                 \
+            const bool l_geq_r = l_abs_geq_r_abs(l.words, r.words, l.get_head(), r.get_head());                                         \
+            size_t out_head = 0;                                                                                                        \
+            subtract_words(l_geq_r ? l.words : r.words, l_geq_r ? r.words : l.words, bigger_head, smaller_head, out_words, out_head);   \
+            bool out_sign;                                                                                                              \
+            if (!out_head && !out_words[0])                                                                                             \
+                out_sign = 0;                                                                                                           \
+            else if (!l.is_negative())                                                                                                  \
+                out_sign = !l_geq_r;                                                                                                    \
+            else                                                                                                                        \
+                out_sign = l_geq_r;                                                                                                     \
+            return out_sign | (out_head << 2U) // no ownership
 
-        template <typename word_t>
+        template <typename word_t> // clang-format on
         void inplace_decrement(word_t *minuend, const word_t *subtrahend, const size_t subtrahend_size)
         {
             word_t carry = 0;
@@ -1624,24 +1616,24 @@ namespace MPA
     public:
         word_t *words;
         size_t flags;
-    };
+    }; // clang-format off
 
-#define MUL_OP(l, r)                                                 \
-    const size_t l_size = l.get_word_count();                        \
-    const size_t r_size = r.get_word_count();                        \
-    copy_words(stash_ptr, l.words, l_size);                          \
-    clear_words(l.words, l_size + r_size);                           \
-    multiply_karatsuba(stash_ptr, r.words, l_size, r_size, l.words); \
-    l.flags = find_head(l.words, l_size + r_size - 1) << 2U
+    #define MUL_OP(l, r)                                                    \
+        const size_t l_size = l.get_word_count();                           \
+        const size_t r_size = r.get_word_count();                           \
+        copy_words(stash_ptr, l.words, l_size);                             \
+        clear_words(l.words, l_size + r_size);                              \
+        multiply_karatsuba(stash_ptr, r.words, l_size, r_size, l.words);    \
+        l.flags = find_head(l.words, l_size + r_size - 1) << 2U
 
-#define SQUARE_OP(l)                              \
-    const size_t l_size = l.get_word_count();     \
-    copy_words(stash_ptr, l.words, l_size);       \
-    clear_words(l.words, 2 * l_size);             \
-    square_karatsuba(stash_ptr, l_size, l.words); \
-    l.flags = find_head(l.words, 2 * l_size - 1) << 2U
+    #define SQUARE_OP(l)                                                    \
+        const size_t l_size = l.get_word_count();                           \
+        copy_words(stash_ptr, l.words, l_size);                             \
+        clear_words(l.words, 2 * l_size);                                   \
+        square_karatsuba(stash_ptr, l_size, l.words);                       \
+        l.flags = find_head(l.words, 2 * l_size - 1) << 2U
 
-    template <typename word_t>
+    template <typename word_t> // clang-format on
     Integer<word_t> power(const Integer<word_t> &base, size_t exponent) noexcept
     {
         if (!exponent)
@@ -1823,39 +1815,39 @@ namespace MPA
     {
         Integer<word_t> tmp, out;
         return egcd(l, r, &tmp), out = (l * r) / tmp, out.flags &= SIGN_OFF, out; // ensure the result is non-negative
-    }
+    } // clang-format off
 
-#define BARRETT_OP(x, modulus)                                                                                \
-    if (x.get_head() >= k - 1)                                                                                \
-    {                                                                                                         \
-        Integer barrett(barrett_ptr, 0);                                                                      \
-        clear_words(stash_ptr, x.get_head() + 2 - k + mue_size);                                              \
-        multiply_karatsuba(x.words + k - 1, mue.words, x.get_head() + 2 - k, mue_size, stash_ptr);            \
-        barrett.flags = find_head(stash_ptr, x.get_head() + 1 - k + mue_size) << 2U;                          \
-        if (barrett.get_head() >= k + 1)                                                                      \
-        {                                                                                                     \
-            barrett.flags = (barrett.get_head() - k - 1) << 2U;                                               \
-            clear_words(barrett_ptr, barrett.get_word_count() + k);                                           \
-            multiply_karatsuba(stash_ptr + k + 1, modulus.words, barrett.get_word_count(), k, barrett.words); \
-            barrett.flags = find_head(barrett.words, barrett.get_head() + k) << 2U;                           \
-            inplace_decrement(x.words, barrett.words, barrett.get_word_count());                              \
-            x.flags = (find_head(x.words, x.get_head()) << 2U);                                               \
-        }                                                                                                     \
-    }                                                                                                         \
-    inplace_decrement(x.words, modulus.words, x >= modulus ? k : 0);                                          \
-    x.flags = find_head(x.words, x.get_head()) << 2U;                                                         \
-    inplace_decrement(x.words, modulus.words, x >= modulus ? k : 0);                                          \
-    x.flags = find_head(x.words, x.get_head()) << 2U
+    #define BARRETT_OP(x, modulus)                                                                                \
+        if (x.get_head() >= k - 1)                                                                                \
+        {                                                                                                         \
+            Integer barrett(barrett_ptr, 0);                                                                      \
+            clear_words(stash_ptr, x.get_head() + 2 - k + mue_size);                                              \
+            multiply_karatsuba(x.words + k - 1, mue.words, x.get_head() + 2 - k, mue_size, stash_ptr);            \
+            barrett.flags = find_head(stash_ptr, x.get_head() + 1 - k + mue_size) << 2U;                          \
+            if (barrett.get_head() >= k + 1)                                                                      \
+            {                                                                                                     \
+                barrett.flags = (barrett.get_head() - k - 1) << 2U;                                               \
+                clear_words(barrett_ptr, barrett.get_word_count() + k);                                           \
+                multiply_karatsuba(stash_ptr + k + 1, modulus.words, barrett.get_word_count(), k, barrett.words); \
+                barrett.flags = find_head(barrett.words, barrett.get_head() + k) << 2U;                           \
+                inplace_decrement(x.words, barrett.words, barrett.get_word_count());                              \
+                x.flags = (find_head(x.words, x.get_head()) << 2U);                                               \
+            }                                                                                                     \
+        }                                                                                                         \
+        inplace_decrement(x.words, modulus.words, x >= modulus ? k : 0);                                          \
+        x.flags = find_head(x.words, x.get_head()) << 2U;                                                         \
+        inplace_decrement(x.words, modulus.words, x >= modulus ? k : 0);                                          \
+        x.flags = find_head(x.words, x.get_head()) << 2U
 
-#define BARRETT_SQUARE(x, modulus) \
-    SQUARE_OP(x);                  \
-    BARRETT_OP(x, modulus)
+    #define BARRETT_SQUARE(x, modulus) \
+        SQUARE_OP(x);                  \
+        BARRETT_OP(x, modulus)
 
-#define BARRETT_MUL(x, y, modulus) \
-    MUL_OP(x, y);                  \
-    BARRETT_OP(x, modulus)
+    #define BARRETT_MUL(x, y, modulus) \
+        MUL_OP(x, y);                  \
+        BARRETT_OP(x, modulus)
 
-    template <typename word_t>
+    template <typename word_t> // clang-format on                                                      
     Integer<word_t> modular_power(const Integer<word_t> &base, const Integer<word_t> &exponent,
                                   const Integer<word_t> &modulus) noexcept
     {
@@ -1889,7 +1881,7 @@ namespace MPA
         Integer<word_t> q(q_ptr, 0);
         Integer<word_t> d(d_ptr, exponent.flags & SIGN_OFF_OWNERSHIP_OFF);
         Integer<word_t> mue(mue_ptr, (modulus_size * 2) << 2U);
-        mue /= modulus; //  mue = (base^(2*k)) / modulus
+        mue /= modulus;
         const size_t mue_size = mue.get_word_count();
         const size_t k = modulus.get_word_count();
 
@@ -2055,7 +2047,7 @@ namespace MPA
         clear_words(mue_ptr, 2 * wordcount);
         mue_ptr[2 * wordcount] = 1;
         Integer<word_t> mue(mue_ptr, (2 * wordcount) << 2U);
-        mue /= candidate; //  mue = (b**(2*k)) // modulus
+        mue /= candidate;
         const size_t mue_size = mue.get_word_count();
         const size_t &k = wordcount;
         copy_words(c_ptr, candidate.words, wordcount);
