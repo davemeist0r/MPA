@@ -2,7 +2,7 @@
 Multi-Precision-Arithmetic
 
 # Usage
-0) Make sure your compiler supports C++17 (the recommended compiler -especially on Windows- is Clang).
+0) Make sure your compiler supports C++20 (the recommended compiler -especially on Windows- is Clang).
 1) Add the single header file "mpa_integer.h" to your include path.
 2) Compile your project as usual.
 
@@ -12,7 +12,7 @@ To run the tests, you can compile the file "mpa_integer_test.cpp" and run it.
 Example command line executed from the repo root (just omit the sanitizers if they are not supported on your system):
   ```
      $ export CXX=clang++
-     $ export CXX_FLAGS="-O3 -Wall -Werror -Wextra -pedantic"
+     $ export CXX_FLAGS="-O3 -Wall -Werror -Wextra -pedantic -std=c++20"
      $ $CXX test/mpa_integer_test.cpp $CXX_FLAGS -I. -fsanitize=undefined -fsanitize=address -o mpa_integer_test
      $ ./mpa_integer_test 
      running tests ...
