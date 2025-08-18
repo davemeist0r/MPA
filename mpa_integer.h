@@ -1546,7 +1546,7 @@ namespace MPA
         word_t *quot_ptr = tmp_prod_ptr + offset;
         Integer<word_t> q(quot_ptr, 0);
 
-        auto swap_integers = [](Integer<word_t> &l, Integer<word_t> &r)
+        const auto swap_integers = [](Integer<word_t> &l, Integer<word_t> &r)
         {
             word_t *stash_ptr = l.words;
             const size_t stash_flags = l.flags;
@@ -1556,7 +1556,7 @@ namespace MPA
             r.flags = stash_flags;
         };
 
-        auto euklid_step = [&swap_integers, &tmp, &tmp_prod, &q](Integer<word_t> &x0, Integer<word_t> &x1)
+        const auto euklid_step = [&swap_integers, &tmp, &tmp_prod, &q](Integer<word_t> &x0, Integer<word_t> &x1)
         {
             Integer<word_t>::copy_words(tmp.words, x0.words, x0.get_word_count());
             tmp.flags = x0.flags;
