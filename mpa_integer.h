@@ -35,7 +35,13 @@
 namespace MPA
 {
 
-    struct EGCDFlags;
+    struct ExtendedGcdFlags
+    {
+        size_t r0_flags = 0;
+        size_t s0_flags = 0;
+        size_t t0_flags = 0;
+        size_t location_encoding = 0;
+    };
 
     template <typename word_t>
     class Integer
@@ -1439,7 +1445,7 @@ namespace MPA
 
         template <typename T>
         friend void egcd(const Integer<T> &x, const Integer<T> &y, Integer<T> *r, Integer<T> *s,
-                         Integer<T> *t, T *workspace, EGCDFlags *flags_ptr) noexcept;
+                         Integer<T> *t, T *workspace, ExtendedGcdFlags *flags_ptr) noexcept;
 
         template <typename T>
         friend Integer<T> gcd(const Integer<T> &l, const Integer<T> &r) noexcept;
@@ -1509,17 +1515,9 @@ namespace MPA
         return free(local_workspace), p.flags = p_is_negative | 0b10 | p.flags, p;
     }
 
-    struct EGCDFlags
-    {
-        size_t r0_flags = 0;
-        size_t s0_flags = 0;
-        size_t t0_flags = 0;
-        size_t location_encoding = 0;
-    };
-
     template <typename word_t>
     void egcd(const Integer<word_t> &x, const Integer<word_t> &y, Integer<word_t> *r = nullptr, Integer<word_t> *s = nullptr,
-              Integer<word_t> *t = nullptr, word_t *workspace = nullptr, EGCDFlags *flags_ptr = nullptr) noexcept
+              Integer<word_t> *t = nullptr, word_t *workspace = nullptr, ExtendedGcdFlags *flags_ptr = nullptr) noexcept
     {
         const size_t max_size = 1 + (x.get_head() > y.get_head() ? x.get_head() : y.get_head());
         word_t *local_workspace = !workspace ? Integer<word_t>::allocate_words(max_size * 2 * 8 + max_size + 4) : workspace;
@@ -1781,7 +1779,7 @@ namespace MPA
         if (exponent.is_negative())
         {
             Integer<word_t>::clear_words(egcd_workspace, egcd_workspace_size);
-            EGCDFlags flags;
+            ExtendedGcdFlags flags;
             egcd<word_t>(base, modulus, nullptr, nullptr, nullptr, egcd_workspace, &flags);
             const size_t offset = 2 * (base_size > modulus_size ? base_size : modulus_size);
             word_t *r_ptr = flags.location_encoding & 0b001 ? egcd_workspace + offset : egcd_workspace;
