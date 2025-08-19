@@ -19,6 +19,8 @@ using word_t = uint64_t;
 using word_t = uint32_t;
 #endif
 
+using Integer = MPA::Integer<word_t>;
+
 /*
     Version ::= INTEGER { two-prime(0), multi(1) }
     (CONSTRAINED BY
@@ -57,31 +59,25 @@ namespace
         while (input_length-- && (b64_data[offset] != '=') &&
                (isalnum(b64_data[offset]) || (b64_data[offset] == '+') || (b64_data[offset] == '/')))
         {
-            tmp_4[i++] = b64_data[offset];
-            offset += 1;
+            tmp_4[i++] = b64_data[offset++];
             if (i == 4)
             {
-                for (i = 0; i < 4; i++)
-                    tmp_4[i] = base64_chars.find(tmp_4[i]);
+                for (i = 0; i < 4; tmp_4[i] = base64_chars.find(tmp_4[i]), i++);
                 tmp_3[0] = (tmp_4[0] << 2U) + ((tmp_4[1] & 0x30) >> 4U);
                 tmp_3[1] = ((tmp_4[1] & 0xf) << 4U) + ((tmp_4[2] & 0x3c) >> 2U);
                 tmp_3[2] = ((tmp_4[2] & 0x3) << 6U) + tmp_4[3];
-                for (i = 0; (i < 3); i++)
-                    ret.push_back(tmp_3[i]);
+                for (i = 0; i < 3; ret.push_back(tmp_3[i]), i++);
                 i = 0;
             }
         }
         if (i)
         {
-            for (j = i; j < 4; j++)
-                tmp_4[j] = 0;
-            for (j = 0; j < 4; j++)
-                tmp_4[j] = base64_chars.find(tmp_4[j]);
+            for (j = i; j < 4; tmp_4[j] = 0, j++);
+            for (j = 0; j < 4; tmp_4[j] = base64_chars.find(tmp_4[j]), j++);
             tmp_3[0] = (tmp_4[0] << 2U) + ((tmp_4[1] & 0x30) >> 4U);
             tmp_3[1] = ((tmp_4[1] & 0xf) << 4U) + ((tmp_4[2] & 0x3c) >> 2U);
             tmp_3[2] = ((tmp_4[2] & 0x3) << 6U) + tmp_4[3];
-            for (j = 0; (j < i - 1); j++)
-                ret.push_back(tmp_3[j]);
+            for (j = 0; j < i - 1; ret.push_back(tmp_3[j]), j++);
         }
     }
 
@@ -113,10 +109,8 @@ namespace
             tmp_4[1] = ((tmp_3[0] & 0x03) << 4U) | ((tmp_3[1] & 0xf0) >> 4U);
             tmp_4[2] = ((tmp_3[1] & 0x0f) << 2U) | ((tmp_3[2] & 0xc0) >> 6U);
             tmp_4[3] = tmp_3[2] & 0x3f;
-            for (size_t j = 0; j <= i; ++j)
-                out.push_back(base64_chars[tmp_4[j]]);
-            while (i++ < 3)
-                out.push_back('=');
+            for (size_t j = 0; j <= i; out.push_back(base64_chars[tmp_4[j]]), ++j);
+            for (size_t j = i; j < 3; out.push_back('='), ++j);
         }
     }
 
@@ -159,14 +153,14 @@ namespace
             std::cerr << "ERROR: length too large: " << byte_length << ", terminating\n", exit(1);
     }
 
-    MPA::Integer<word_t> construct_integer_from_bigendian_bytebuffer(const std::vector<uint8_t> &bytebuffer, const size_t bytebuffer_size, size_t &offset)
+    Integer construct_integer_from_bigendian_bytebuffer(const std::vector<uint8_t> &bytebuffer, const size_t bytebuffer_size, size_t &offset)
     {
-        MPA::Integer<word_t> out = 0; // clang-format off
-        for (size_t i = 0; i < bytebuffer_size; out += MPA::Integer<word_t>(bytebuffer[offset]) << ((bytebuffer_size - 1 - i) << 3U), ++offset, ++i);
-        return out; // clang-format on
+        Integer out = 0;
+        for (size_t i = 0; i < bytebuffer_size; out += Integer(bytebuffer[offset]) << ((bytebuffer_size - 1 - i) << 3U), ++offset, ++i);
+        return out;
     }
 
-    void serialize_tail(std::vector<uint8_t> &bytes, const MPA::Integer<word_t> &x)
+    void serialize_tail(std::vector<uint8_t> &bytes, const Integer &x)
     {
         for (size_t i = x.get_head() - 1; i < x.get_head(); --i)
         {
@@ -196,7 +190,7 @@ namespace
         }
     }
 
-    void DER_serialize(std::vector<uint8_t> &bytes, const MPA::Integer<word_t> &x)
+    void DER_serialize(std::vector<uint8_t> &bytes, const Integer &x)
     {
         const uint32_t x_binary_size = x.to_binary().size() - 2;
         const uint32_t x_byte_size = x_binary_size & 7 ? (x_binary_size >> 3U) + 1 : (x_binary_size >> 3U);
@@ -229,15 +223,15 @@ namespace
 
 struct RSA // two-prime only
 {
-    MPA::Integer<word_t> n;
-    MPA::Integer<word_t> e;
-    MPA::Integer<word_t> d;
-    MPA::Integer<word_t> p;
-    MPA::Integer<word_t> q;
+    Integer n;
+    Integer e;
+    Integer d;
+    Integer p;
+    Integer q;
 
     RSA() : n(0), e(0), d(0), p(0), q(0){};
 
-    RSA(const MPA::Integer<word_t> &n_, const MPA::Integer<word_t> &p_, const MPA::Integer<word_t> &q_, const MPA::Integer<word_t> &e_, const MPA::Integer<word_t> &d_)
+    RSA(const Integer &n_, const Integer &p_, const Integer &q_, const Integer &e_, const Integer &d_)
         : n(n_), e(e_), d(d_), p(p_), q(q_) {}
 
     size_t write_private_key(const std::string &outfile_name) const
@@ -252,7 +246,7 @@ struct RSA // two-prime only
         bytes.push_back(0); // fill the actual length later;
 
         // version
-        DER_serialize(bytes, MPA::Integer<word_t>(0)); // "two-prime" only
+        DER_serialize(bytes, Integer(0)); // "two-prime" only
 
         // modulus -> n = p * q
         DER_serialize(bytes, n);
@@ -378,7 +372,7 @@ std::ostream &operator<<(std::ostream &os, const RSA &rsa) noexcept
 
 RSA generate_rsa_key(const size_t bitlength)
 {
-    MPA::Integer<word_t> p, q, n, lambda, e, d;
+    Integer p, q, n, lambda, e, d;
     while (true) // as long as p == q
     {
         // choose p, q prime such that p, q require bitlength / 2 many bits
@@ -394,14 +388,14 @@ RSA generate_rsa_key(const size_t bitlength)
     // compute carmichael totient function
     lambda = MPA::lcm(p - 1, q - 1);
     // choose e coprime to lambda such that 1 < e < lambda
-    e = MPA::Integer<word_t>("65537"); // use string constructor to make this line work also for uint16_t ;)
+    e = Integer("65537"); // use string constructor to make this line work also for uint16_t ;)
     d = MPA::modular_inverse(e, lambda);
     while (d.is_zero()) // as long as e and lambda are not coprime
         e -= 1, d = MPA::modular_inverse(e, lambda);
     return RSA(n, p, q, e, d);
 }
 
-bool parse_rsa_public_key(const std::vector<uint8_t> &rsa_public_key_bytes, MPA::Integer<word_t> &exponent, MPA::Integer<word_t> &modulus)
+bool parse_rsa_public_key(const std::vector<uint8_t> &rsa_public_key_bytes, Integer &exponent, Integer &modulus)
 {
     std::vector<uint8_t> b64_decoded;
     b64_decode(rsa_public_key_bytes, b64_decoded);
@@ -506,13 +500,13 @@ bool parse_rsa_private_key(const std::vector<uint8_t> &rsa_private_key_bytes, RS
                                    (b64_decoded[offset + 2] << 8U) |
                                    (b64_decoded[offset + 3]);
         offset += 4;
-        MPA::Integer pub_exponent = construct_integer_from_bigendian_bytebuffer(b64_decoded, pub_exponent_size, offset);
+        Integer pub_exponent = construct_integer_from_bigendian_bytebuffer(b64_decoded, pub_exponent_size, offset);
         const size_t pub_modulus_size = (b64_decoded[offset] << 24U) |
                                         (b64_decoded[offset + 1] << 16U) |
                                         (b64_decoded[offset + 2] << 8U) |
                                         (b64_decoded[offset + 3]);
         offset += 4;
-        MPA::Integer pub_modulus = construct_integer_from_bigendian_bytebuffer(b64_decoded, pub_modulus_size, offset);
+        Integer pub_modulus = construct_integer_from_bigendian_bytebuffer(b64_decoded, pub_modulus_size, offset);
         // parse the length for rnd + private key + comment + padding
         /*size_t private_key_size = (b64_decoded[offset] << 24U) |
                                   (b64_decoded[offset + 1] << 16U) |
@@ -542,42 +536,42 @@ bool parse_rsa_private_key(const std::vector<uint8_t> &rsa_private_key_bytes, RS
                               (b64_decoded[offset + 2] << 8U) |
                               (b64_decoded[offset + 3]);
         offset += 4;
-        MPA::Integer modulus = construct_integer_from_bigendian_bytebuffer(b64_decoded, modulus_size, offset);
+        Integer modulus = construct_integer_from_bigendian_bytebuffer(b64_decoded, modulus_size, offset);
         // parse encryption exponent -> e
         const size_t encryption_exponent_size = (b64_decoded[offset] << 24U) |
                                                 (b64_decoded[offset + 1] << 16U) |
                                                 (b64_decoded[offset + 2] << 8U) |
                                                 (b64_decoded[offset + 3]);
         offset += 4;
-        MPA::Integer encryption_exponent = construct_integer_from_bigendian_bytebuffer(b64_decoded, encryption_exponent_size, offset);
+        Integer encryption_exponent = construct_integer_from_bigendian_bytebuffer(b64_decoded, encryption_exponent_size, offset);
         // parse decryption exponent -> d
         size_t decryption_exponent_size = (b64_decoded[offset] << 24U) |
                                           (b64_decoded[offset + 1] << 16U) |
                                           (b64_decoded[offset + 2] << 8U) |
                                           (b64_decoded[offset + 3]);
         offset += 4;
-        MPA::Integer decryption_exponent = construct_integer_from_bigendian_bytebuffer(b64_decoded, decryption_exponent_size, offset);
+        Integer decryption_exponent = construct_integer_from_bigendian_bytebuffer(b64_decoded, decryption_exponent_size, offset);
         // parse cofficient -> q^-1 mod p
         size_t cofficient_size = (b64_decoded[offset] << 24U) |
                                  (b64_decoded[offset + 1] << 16U) |
                                  (b64_decoded[offset + 2] << 8U) |
                                  (b64_decoded[offset + 3]);
         offset += 4;
-        MPA::Integer coefficient = construct_integer_from_bigendian_bytebuffer(b64_decoded, cofficient_size, offset);
+        Integer coefficient = construct_integer_from_bigendian_bytebuffer(b64_decoded, cofficient_size, offset);
         // parse prime 1 -> p
         size_t prime1_size = (b64_decoded[offset] << 24U) |
                              (b64_decoded[offset + 1] << 16U) |
                              (b64_decoded[offset + 2] << 8U) |
                              (b64_decoded[offset + 3]);
         offset += 4;
-        MPA::Integer prime1 = construct_integer_from_bigendian_bytebuffer(b64_decoded, prime1_size, offset);
+        Integer prime1 = construct_integer_from_bigendian_bytebuffer(b64_decoded, prime1_size, offset);
         // parse prime 2 -> q
         size_t prime2_size = (b64_decoded[offset] << 24U) |
                              (b64_decoded[offset + 1] << 16U) |
                              (b64_decoded[offset + 2] << 8U) |
                              (b64_decoded[offset + 3]);
         offset += 4;
-        MPA::Integer prime2 = construct_integer_from_bigendian_bytebuffer(b64_decoded, prime2_size, offset);
+        Integer prime2 = construct_integer_from_bigendian_bytebuffer(b64_decoded, prime2_size, offset);
         // validate the private key components
         if (decryption_exponent != MPA::modular_inverse(encryption_exponent, (prime1 - 1) * (prime2 - 1)) ||
             prime1 * prime2 != modulus || MPA::modular_inverse(prime2, prime1) != coefficient ||
@@ -604,30 +598,30 @@ bool parse_rsa_private_key(const std::vector<uint8_t> &rsa_private_key_bytes, RS
     offset += 1;
     // parse modulus -> n
     size_t modulus_length = DER_read_length(offset, b64_decoded);
-    MPA::Integer modulus = construct_integer_from_bigendian_bytebuffer(b64_decoded, modulus_length, offset);
+    Integer modulus = construct_integer_from_bigendian_bytebuffer(b64_decoded, modulus_length, offset);
     // parse encryption exponent -> e
     size_t encryption_exponent_length = DER_read_length(offset, b64_decoded);
     if (encryption_exponent_length > 4)
         return std::cerr << "unexpected encryption exponent length: " << (int)encryption_exponent_length << "\n", false;
-    MPA::Integer encryption_exponent = construct_integer_from_bigendian_bytebuffer(b64_decoded, encryption_exponent_length, offset);
+    Integer encryption_exponent = construct_integer_from_bigendian_bytebuffer(b64_decoded, encryption_exponent_length, offset);
     // parse decryption exponent -> d
     size_t decryption_exponent_length = DER_read_length(offset, b64_decoded);
-    MPA::Integer decryption_exponent = construct_integer_from_bigendian_bytebuffer(b64_decoded, decryption_exponent_length, offset);
+    Integer decryption_exponent = construct_integer_from_bigendian_bytebuffer(b64_decoded, decryption_exponent_length, offset);
     // parse prime 1 -> p
     size_t prime1_length = DER_read_length(offset, b64_decoded);
-    MPA::Integer prime1 = construct_integer_from_bigendian_bytebuffer(b64_decoded, prime1_length, offset);
+    Integer prime1 = construct_integer_from_bigendian_bytebuffer(b64_decoded, prime1_length, offset);
     // parse prime 2 -> q
     size_t prime2_length = DER_read_length(offset, b64_decoded);
-    MPA::Integer prime2 = construct_integer_from_bigendian_bytebuffer(b64_decoded, prime2_length, offset);
+    Integer prime2 = construct_integer_from_bigendian_bytebuffer(b64_decoded, prime2_length, offset);
     // parse exponent 1 -> d mod (p-1)
     size_t exponent1_length = DER_read_length(offset, b64_decoded);
-    MPA::Integer exponent1 = construct_integer_from_bigendian_bytebuffer(b64_decoded, exponent1_length, offset);
+    Integer exponent1 = construct_integer_from_bigendian_bytebuffer(b64_decoded, exponent1_length, offset);
     // parse exponent 2 -> d mod (q-1)
     size_t exponent2_length = DER_read_length(offset, b64_decoded);
-    MPA::Integer exponent2 = construct_integer_from_bigendian_bytebuffer(b64_decoded, exponent2_length, offset);
+    Integer exponent2 = construct_integer_from_bigendian_bytebuffer(b64_decoded, exponent2_length, offset);
     // parse coefficient -> q^-1 mod p
     size_t coefficient_length = DER_read_length(offset, b64_decoded);
-    MPA::Integer coefficient = construct_integer_from_bigendian_bytebuffer(b64_decoded, coefficient_length, offset);
+    Integer coefficient = construct_integer_from_bigendian_bytebuffer(b64_decoded, coefficient_length, offset);
     // validate the RSA key
     if (offset != b64_decoded.size() || offset != sequence_length + 4)
         return std::cerr << "error: bad sequence length or unexpected padding\n", false;
@@ -655,11 +649,11 @@ bool read_rsa_public_key_file(const std::string &filepath)
             tmp.push_back(character);
     }
     std::vector<uint8_t> b64;
-    size_t i; // clang-format off
-    for (i = 0; i < tmp.size() && tmp[i] != ' '; ++i); // clang-format on
+    size_t i;
+    for (i = 0; i < tmp.size() && tmp[i] != ' '; ++i);
     for (size_t j = i + 1; j < tmp.size() && tmp[j] != ' '; ++j)
         b64.push_back(tmp[j]);
-    MPA::Integer<word_t> modulus, exponent;
+    Integer modulus, exponent;
     if (parse_rsa_public_key(b64, exponent, modulus))
     {
         std::cout << "<<<RSA PUBLIC KEY DETAIL START>>>\n\n";

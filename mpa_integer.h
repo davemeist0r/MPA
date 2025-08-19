@@ -101,7 +101,7 @@ namespace MPA
             }
 
             static constexpr mulfunction funcs[multable_max_wordsize * (multable_max_wordsize + 1) >> 1U] = {
-                multiply_words<1, 1>, // clang-format off
+                multiply_words<1, 1>,
                 multiply_words<2, 1>,  multiply_words<2, 2>,
                 multiply_words<3, 1>,  multiply_words<3, 2>,  multiply_words<3, 3>,
                 multiply_words<4, 1>,  multiply_words<4, 2>,  multiply_words<4, 3>,  multiply_words<4, 4>,
@@ -119,7 +119,7 @@ namespace MPA
                 multiply_words<16, 1>, multiply_words<16, 2>, multiply_words<16, 3>, multiply_words<16, 4>, multiply_words<16, 5>, multiply_words<16, 6>, multiply_words<16, 7>, multiply_words<16, 8>, multiply_words<16, 9>, multiply_words<16, 10>, multiply_words<16, 11>, multiply_words<16, 12>, multiply_words<16, 13>, multiply_words<16, 14>, multiply_words<16, 15>, multiply_words<16, 16>,
                 multiply_words<17, 1>, multiply_words<17, 2>, multiply_words<17, 3>, multiply_words<17, 4>, multiply_words<17, 5>, multiply_words<17, 6>, multiply_words<17, 7>, multiply_words<17, 8>, multiply_words<17, 9>, multiply_words<17, 10>, multiply_words<17, 11>, multiply_words<17, 12>, multiply_words<17, 13>, multiply_words<17, 14>, multiply_words<17, 15>, multiply_words<17, 16>, multiply_words<17, 17>,
                 multiply_words<18, 1>, multiply_words<18, 2>, multiply_words<18, 3>, multiply_words<18, 4>, multiply_words<18, 5>, multiply_words<18, 6>, multiply_words<18, 7>, multiply_words<18, 8>, multiply_words<18, 9>, multiply_words<18, 10>, multiply_words<18, 11>, multiply_words<18, 12>, multiply_words<18, 13>, multiply_words<18, 14>, multiply_words<18, 15>, multiply_words<18, 16>, multiply_words<18, 17>, multiply_words<18, 18>,
-            }; // clang-format on
+            };
         };
 
         /*
@@ -241,11 +241,11 @@ namespace MPA
         }
 
         static size_t find_head(const word_t *l, const size_t start_point) noexcept
-        { // clang-format off
+        {
             size_t i = start_point;
             for (i = start_point; !l[i] && i >= 1; --i);
             return i;
-        } // clang-format on
+        }
 
         static word_t add_overflow(const word_t a, const word_t b, word_t &overflow) noexcept
         {
@@ -291,7 +291,7 @@ namespace MPA
         }
 
         static bool l_abs_geq_r_abs(const word_t *l, const word_t *r, const size_t l_head, const size_t r_head) noexcept
-        { // clang-format off
+        {
             if (l_head < r_head)
                 return false;
             if (l_head > r_head)
@@ -321,7 +321,7 @@ namespace MPA
             return out_sign | (out_head << 2U) // no ownership
 
         static void inplace_decrement(word_t *minuend, const word_t *subtrahend, const size_t subtrahend_size)
-        { // clang-format on
+        {
             word_t carry = 0;
             size_t j = 0;
             for (j = 0; j < subtrahend_size; ++j)
@@ -437,11 +437,11 @@ namespace MPA
         }
 
         static bool compare_words(const word_t *left, const word_t *right, const size_t size) noexcept
-        { // clang-format off
+        {
             size_t i = size - 1;
             for (i = size - 1; i < size && left[i] == right[i]; --i);
             return i < size ? left[i] > right[i] : false;
-        } // clang-format on
+        }
 
         static size_t divmod(word_t *l_words, const size_t l_head, word_t *y_words, const size_t y_head, word_t *output,
                              word_t *workspace, const size_t K, // requirement: K >= l_head + 5
@@ -520,9 +520,9 @@ namespace MPA
                 clear_words(shifted_remainder_correction_ptr, words_to_clear);
                 multiply_by_doubleword(q_words, initial_yabs_ptr, t, shifted_remainder_correction_ptr);
                 // second pass of adjusting the estimate
-                size_t j; // clang-format off
+                size_t j;
                 for (j = 0; j < words_to_clear && remainder_ptr[remainder_correction_size - 1 - j]
-                     == remainder_correction_ptr[remainder_correction_size - 1 - j]; ++j); // clang-format on
+                     == remainder_correction_ptr[remainder_correction_size - 1 - j]; ++j);
                 if (j < words_to_clear && remainder_ptr[remainder_correction_size - 1 - j] <
                                               remainder_correction_ptr[remainder_correction_size - 1 - j])
                 {
@@ -559,9 +559,9 @@ namespace MPA
                 clear_words(shifted_remainder_correction_ptr, words_to_clear);
                 multiply_by_doubleword(q_words, initial_yabs_ptr, t, shifted_remainder_correction_ptr);
                 // second pass of adjusting the estimate
-                size_t j; // clang-format off
+                size_t j;
                 for (j = 0; j < words_to_clear && remainder_ptr[remainder_correction_size - 1 - j] ==
-                        remainder_correction_ptr[remainder_correction_size - 1 - j]; ++j); // clang-format on
+                        remainder_correction_ptr[remainder_correction_size - 1 - j]; ++j);
                 if (j < words_to_clear && remainder_ptr[remainder_correction_size - 1 - j] <
                                               remainder_correction_ptr[remainder_correction_size - 1 - j])
                 {
@@ -608,13 +608,13 @@ namespace MPA
             size_t idx = 0;
             out[idx++] = 2;
             for (size_t i = 3; i <= biggest_prime; ++i)
-            { // clang-format off
+            {
                 bool prime = true;
                 const size_t loop_bound = i < biggest_prime_sqrt + 1 ? i : biggest_prime_sqrt + 1;
                 for (size_t potential_factor = 2; prime && potential_factor < loop_bound; prime = i % potential_factor, ++potential_factor);
                 if (prime)
                     out[idx++] = i;
-            } // clang-format on
+            }
             return out;
         }();
 
@@ -1270,7 +1270,7 @@ namespace MPA
         }
 
         friend bool operator>(const Integer &l, const Integer &r) noexcept
-        { // clang-format off
+        {
             if (!l.is_negative() && r.is_negative())
                 return true;
             if (l.is_negative() && !r.is_negative())
@@ -1292,7 +1292,7 @@ namespace MPA
             size_t i = 0;
             for (i = l.get_head(); i < l.get_word_count() && l.words[i] == r.words[i]; --i);
             return i < l.get_word_count() ? l.words[i] < r.words[i] : false;
-        } // clang-format on
+        }
 
         friend bool operator>=(const Integer &l, const Integer &r) noexcept
         {
@@ -1465,7 +1465,7 @@ namespace MPA
 
         template <typename T>
         friend Integer<T> get_random_prime(const size_t wordcount, bool verbose) noexcept;
-    }; // clang-format off
+    };
 
     #define MUL_OP(l, r)                                                                        \
         const size_t l_size = l.get_word_count();                                               \
@@ -1482,7 +1482,7 @@ namespace MPA
         Integer<word_t>::square_karatsuba(stash_ptr, l_size, l.words);                          \
         l.flags = Integer<word_t>::find_head(l.words, 2 * l_size - 1) << 2U
 
-    template <typename word_t> // clang-format on
+    template <typename word_t>
     Integer<word_t> power(const Integer<word_t> &base, size_t exponent) noexcept
     {
         if (!exponent)
@@ -1664,7 +1664,7 @@ namespace MPA
     {
         Integer<word_t> tmp, out;
         return egcd(l, r, &tmp), out = (l * r) / tmp, out.flags &= Integer<word_t>::SIGN_OFF, out; // ensure the result is non-negative
-    } // clang-format off
+    }
 
     #define BARRETT_OP(x, modulus)                                                                                                 \
         if (x.get_head() >= k - 1)                                                                                                 \
@@ -1696,7 +1696,7 @@ namespace MPA
         MUL_OP(x, y);                  \
         BARRETT_OP(x, modulus)
 
-    template <typename word_t> // clang-format on                                                      
+    template <typename word_t>
     Integer<word_t> modular_power(const Integer<word_t> &base, const Integer<word_t> &exponent,
                                   const Integer<word_t> &modulus) noexcept
     {
@@ -2048,8 +2048,7 @@ namespace MPA
             p.words[0] |= 1;                                         // make sure p is odd
             p.words[p.get_word_count() - 1] |= Integer<word_t>::msb; // make sure p has msb set
             word_t p_mod_3 = p.words[0] % 3;
-            for (size_t j = 1; j < p.get_word_count(); ++j)
-                p_mod_3 = (p_mod_3 + (p.words[j] % 3)) % 3; // we use 2^64k = (-1)^64k = 1 (mod 3)
+            for (size_t j = 1; j < p.get_word_count(); p_mod_3 = (p_mod_3 + (p.words[j] % 3)) % 3, ++j); // we use 2^64k = (-1)^64k = 1 (mod 3)
             switch (p_mod_3)
             {
             case 0: // p = 3 mod 6

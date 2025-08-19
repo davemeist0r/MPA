@@ -208,17 +208,17 @@ void test_integer()
     // modular arithmetic
     {
         Integer base("0x112312334534535241312312313245345345");
-        Integer modulus("0x11797897897892312334534535241312312313245345345");
         Integer exponent("0x111123123123123123123123123");
+        Integer modulus("0x11797897897892312334534535241312312313245345345");
         assert(MPA::modular_power(base, exponent, modulus) ==
                Integer("0x4d3e8ef9f877a4899d1326dd59914a33a1c472033601cc"));
         assert(MPA::modular_power(base, -exponent, modulus) ==
                Integer("0x10c2ffc0cfef84583a46567f0e1f69ef977353ed0d25a44"));
     }
     {
-        Integer modulus("0x112312334534535241312312313245345345");
         Integer base("0x11797897897892312334534535241312312313245345345");
         Integer exponent("0x111123123123123123123123123");
+        Integer modulus("0x112312334534535241312312313245345345");
         assert(MPA::modular_power(base, exponent, modulus) ==
                Integer("0x1e1845a70ce61e70b2ecad422e0944f9b24"));
         assert(MPA::modular_power(base, -exponent, modulus) ==
