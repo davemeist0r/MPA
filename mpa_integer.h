@@ -1932,7 +1932,6 @@ namespace MPA
         for (size_t i = 0; i < steps; ++i)
         {
             // get a testing candidate and prepare check
-            bool miller_rabin_step_passed = false;
             Integer<word_t> a = Integer<word_t>::get_random(limit, candidate_buffer);
             *p_ptr = 1;
             *(p_ptr + 1) = 0; // just making sure
@@ -1980,21 +1979,17 @@ namespace MPA
                     memcpy(&looked_up_flags, looked_up_ptr + modulus_size, sizeof(size_t));
                     Integer<word_t> looked_up(looked_up_ptr, looked_up_flags);
                     BARRETT_MUL(p, looked_up, modulus);
-                    bit_pos = l - 1;
-                    window_count += 1;
+                    bit_pos = l - 1, window_count += 1;
                 }
             }
-            if ((!p.get_head() && p.words[0] == 1) || p == c)
-                miller_rabin_step_passed = true;
+            bool miller_rabin_step_passed = ((!p.get_head() && p.words[0] == 1) || p == c);
 
             // check a^(2^r*d) for 0 <= r < base_j
             size_t j = base_j;
             while (!miller_rabin_step_passed && j > 1 && (p.get_head() || p.words[0] > 1))
             {
-                j -= 1;
                 BARRETT_SQUARE(p, modulus);
-                if (p == c)
-                    miller_rabin_step_passed = true;
+                miller_rabin_step_passed |= p == c, j -= 1;
             }
             if (!miller_rabin_step_passed)
                 return cleanup(), false;
