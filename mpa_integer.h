@@ -158,8 +158,8 @@ namespace MPA
             const bool dont_require_allocation = karatsuba_buffer_size > needed_scratch_words + karatsuba_buffer_offset;
             word_t *z0 = out;
             word_t *tmp;
-            word_t *z1 = dont_require_allocation ? (tmp = karatsuba_buffer + karatsuba_buffer_offset,
-                                                    clear_words(tmp, needed_scratch_words), karatsuba_buffer_offset += needed_scratch_words, tmp)
+            word_t *z1 = dont_require_allocation ? (tmp = karatsuba_buffer + karatsuba_buffer_offset, clear_words(tmp, needed_scratch_words),
+                                                    karatsuba_buffer_offset += needed_scratch_words, tmp)
                                                  : allocate_words(needed_scratch_words);
             word_t *z2 = l_high && r_high ? out + 2 * m : nullptr;
             word_t *sum_l = z1 + z1_size;
@@ -202,8 +202,8 @@ namespace MPA
             const bool dont_require_allocation = karatsuba_buffer_size > needed_scratch_words + karatsuba_buffer_offset;
             word_t *z0 = out;
             word_t *tmp;
-            word_t *z1 = dont_require_allocation ? (tmp = karatsuba_buffer + karatsuba_buffer_offset,
-                                                    clear_words(tmp, needed_scratch_words), karatsuba_buffer_offset += needed_scratch_words, tmp)
+            word_t *z1 = dont_require_allocation ? (tmp = karatsuba_buffer + karatsuba_buffer_offset, clear_words(tmp, needed_scratch_words),
+                                                    karatsuba_buffer_offset += needed_scratch_words, tmp)
                                                  : allocate_words(needed_scratch_words);
             word_t *z2 = out + 2 * m;
             size_t z1_size = 2 * sum_l_size;
@@ -268,8 +268,7 @@ namespace MPA
                 total_sum[i] = add_overflow(sum, carry, carry);
                 carry += current_carry;
             }
-            for (size_t i = smaller_size; i < bigger_size; ++i)
-                total_sum[i] = add_overflow(bigger[i], carry, carry);
+            for (size_t i = smaller_size; i < bigger_size; total_sum[i] = add_overflow(bigger[i], carry, carry), ++i);
             total_sum[bigger_size] = carry;
             return carry;
         }
@@ -408,8 +407,7 @@ namespace MPA
                 return 0;
             size_t count = 0;
             word_t d = 0;
-            for (size_t i = 0; !d && i <= head; ++i)
-                count += (d = word_ptr[i]) ? 0 : bits_in_word;
+            for (size_t i = 0; !d && i <= head; count += (d = word_ptr[i]) ? 0 : bits_in_word, ++i);
             count += get_trailing_zero_bits(d);
             return count;
         }
@@ -859,13 +857,9 @@ namespace MPA
             std::stringstream ss;
             ss << (!is_negative() ? "0b" : "-0b");
             size_t k = bits_in_word - 1 - get_leading_zero_bits(words[get_head()]);
-            for (size_t j = k; j < k + 1; --j)
-                ss << get_bit((get_head() * bits_in_word) + j);
+            for (size_t j = k; j < k + 1; ss << get_bit((get_head() * bits_in_word) + j), --j);
             for (size_t i = get_head() - 1; i < get_head(); --i)
-            {
-                for (size_t j = bits_in_word - 1; j < bits_in_word; --j)
-                    ss << get_bit((i * bits_in_word) + j);
-            }
+                for (size_t j = bits_in_word - 1; j < bits_in_word; ss << get_bit((i * bits_in_word) + j), --j);
             return ss.str();
         }
 
@@ -905,8 +899,7 @@ namespace MPA
             const size_t i = is_negative();
             out_str.resize(digits_size + i);
             out_str[0] = i ? '-' : 0;
-            for (size_t j = 0; j < digits_size; ++j)
-                out_str[j + i] = digits[digits_size - 1 - j] + '0';
+            for (size_t j = 0; j < digits_size; out_str[j + i] = digits[digits_size - 1 - j] + '0', ++j);
             return free(tmp), out_str;
         }
 
@@ -1042,8 +1035,7 @@ namespace MPA
                 if (!carry)
                     return *this;
                 size_t i = 1;
-                for (i = 1; carry && i <= get_head(); ++i)
-                    words[i] += (carry = words[i] == std::numeric_limits<word_t>::max(), 1);
+                for (i = 1; carry && i <= get_head(); words[i] += (carry = words[i] == std::numeric_limits<word_t>::max(), 1), ++i);
                 if (carry && i == get_word_count())
                 {
                     word_t *new_words = allocate_words(i + 1);
@@ -1065,8 +1057,7 @@ namespace MPA
                 if (!carry)
                     return *this;
                 size_t i = 1;
-                for (i = 1; carry && i <= get_head(); ++i)
-                    words[i] += (carry = words[i] == std::numeric_limits<word_t>::max(), 1);
+                for (i = 1; carry && i <= get_head(); words[i] += (carry = words[i] == std::numeric_limits<word_t>::max(), 1), ++i);
                 if (carry && i == get_word_count())
                 {
                     word_t *new_words = allocate_words(i + 1);
@@ -1315,10 +1306,8 @@ namespace MPA
             const Integer &smaller = l.get_word_count() > r.get_word_count() ? r : l;
             word_t *outwords = allocate_words(bigger.get_word_count());
             size_t outhead = 0;
-            for (size_t i = 0; i < smaller.get_word_count(); ++i)
-                outhead = (outwords[i] = l.words[i] ^ r.words[i]) ? i : outhead;
-            for (size_t i = smaller.get_word_count(); i < bigger.get_word_count(); ++i)
-                outhead = (outwords[i] = bigger.words[i]) ? i : outhead;
+            for (size_t i = 0; i < smaller.get_word_count(); outhead = (outwords[i] = l.words[i] ^ r.words[i]) ? i : outhead, ++i);
+            for (size_t i = smaller.get_word_count(); i < bigger.get_word_count(); outhead = (outwords[i] = bigger.words[i]) ? i : outhead, ++i);
             return Integer(outwords, 0b10 | (outhead << 2U));
         }
 
@@ -1328,10 +1317,8 @@ namespace MPA
             const Integer &smaller = l.get_word_count() > r.get_word_count() ? r : l;
             word_t *outwords = allocate_words(bigger.get_word_count());
             size_t outhead = 0;
-            for (size_t i = 0; i < smaller.get_word_count(); ++i)
-                outhead = (outwords[i] = l.words[i] | r.words[i]) ? i : outhead;
-            for (size_t i = smaller.get_word_count(); i < bigger.get_word_count(); ++i)
-                outhead = (outwords[i] = bigger.words[i]) ? i : outhead;
+            for (size_t i = 0; i < smaller.get_word_count(); outhead = (outwords[i] = l.words[i] | r.words[i]) ? i : outhead, ++i);
+            for (size_t i = smaller.get_word_count(); i < bigger.get_word_count(); outhead = (outwords[i] = bigger.words[i]) ? i : outhead, ++i);
             return Integer(outwords, 0b10 | (outhead << 2U));
         }
 
@@ -1340,8 +1327,7 @@ namespace MPA
             const size_t min_size = l.get_word_count() > r.get_word_count() ? r.get_word_count() : l.get_word_count();
             word_t *outwords = allocate_words(min_size);
             size_t outhead = 0;
-            for (size_t i = 0; i < min_size; ++i)
-                outhead = (outwords[i] = l.words[i] & r.words[i]) ? i : outhead;
+            for (size_t i = 0; i < min_size; outhead = (outwords[i] = l.words[i] & r.words[i]) ? i : outhead, ++i);
             return Integer(outwords, 0b10 | (outhead << 2U));
         }
 
@@ -1391,12 +1377,10 @@ namespace MPA
             for (size_t i = 0; i < wordcount - 1; ++i)
             {
                 out_words[i] = 0;
-                for (size_t j = 0; j < sizeof(word_t); ++j)
-                    out_words[i] |= dist(rng) << (8 * j);
+                for (size_t j = 0; j < sizeof(word_t); out_words[i] |= dist(rng) << (8 * j), ++j);
             }
             word_t head = 0;
-            for (size_t j = 0; j < sizeof(word_t); ++j)
-                head |= dist(rng) << (8 * j);
+            for (size_t j = 0; j < sizeof(word_t); head |= dist(rng) << (8 * j), ++j);
             out_words[wordcount - 1] = head ? head : std::numeric_limits<word_t>::max();
             return Integer(out_words, is_negative | (buffer ? 0 : 0b10) | ((wordcount - 1) << 2U));
         }
