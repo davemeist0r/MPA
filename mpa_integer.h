@@ -1689,11 +1689,9 @@ namespace MPA
         if (base.is_zero())
             return Integer<word_t>(0);
 
-        const size_t base_size = base.get_word_count();
-        const size_t modulus_size = modulus.get_word_count();
+        const size_t base_size = base.get_word_count(), modulus_size = modulus.get_word_count();
         const size_t prodsize = base_size > modulus_size ? base_size * 2 + 4 : modulus_size * 2 + 4;
-        const size_t barrett_size = prodsize * 2;
-        const size_t exponent_size = exponent.get_word_count();
+        const size_t barrett_size = prodsize * 2, exponent_size = exponent.get_word_count();
         const size_t egcd_workspace_size = exponent.is_negative() ? 4 + 2 * 8 * (prodsize - 4) / 2 + (prodsize - 4) / 2 + 4
                                                                   : 0;
         const size_t local_workspace_size =
@@ -1820,10 +1818,8 @@ namespace MPA
             }
             else
             {
-                word_t window = 0;
+                size_t window = 0, window_width = 0, right_most_possible = window_size < i + 1 ? 0 : window_size - i - 1;
                 int64_t l = 0;
-                size_t window_width = 0;
-                size_t right_most_possible = window_size < i + 1 ? 0 : window_size - i - 1;
                 bool found_l = false;
                 for (int64_t j = right_most_possible; j < window_size; ++j)
                 {
@@ -1865,8 +1861,7 @@ namespace MPA
         if (!candidate.get_head() && (candidate.words[0] == 2 || candidate.words[0] == 3))
             return true; // handle some small primes first
 
-        const size_t wordcount = candidate.get_word_count();
-        const size_t max_prodsize = wordcount * 2 + 4;
+        const size_t wordcount = candidate.get_word_count(), max_prodsize = wordcount * 2 + 4;
         const size_t workspace_buffer_size = max_prodsize * 6 + wordcount * 3 + 1;
         word_t *workspace_buffer = workspace ? workspace : Integer<word_t>::allocate_words(workspace_buffer_size);
         word_t *p_ptr = workspace_buffer;
@@ -1906,10 +1901,8 @@ namespace MPA
                 pre_bit_pos -= 1;
             else
             {
-                size_t window = 0;
+                size_t window = 0, window_width = 0, right_most_possible = window_size < pre_bit_pos + 1 ? 0 : window_size - pre_bit_pos - 1;
                 int64_t l = 0;
-                size_t window_width = 0;
-                size_t right_most_possible = window_size < pre_bit_pos + 1 ? 0 : window_size - pre_bit_pos - 1;
                 bool found_l = false;
                 for (int64_t j = right_most_possible; j < window_size; ++j)
                 {
@@ -2041,8 +2034,7 @@ namespace MPA
             }
         };
         prepare_p(), refresh_memory();
-        int64_t step = 0;
-        int64_t j = 0;
+        int64_t step = 0, j = 0;
         word_t memory_step = 0;
         while (true)
         {
