@@ -67,10 +67,37 @@ namespace MPA
                                          return static_cast<__uint128_t>(1);
 #endif
                                  }());
-    private:
+    public:
+        static word_t *allocate_words(const size_t word_count) noexcept
+        {
+            word_t *buffer;
+            if (!(buffer = (word_t *)(calloc(word_count, sizeof(word_t)))))
+                std::cerr << "ERROR: OUT OF MEMORY, ABORT !\n", abort();
+            return buffer;
+        }
+
+        static void clear_words(word_t *dst, const size_t wordcount) noexcept
+        {
+            memset(dst, 0, wordcount * sizeof(word_t));
+        }
+
+        static void copy_words(word_t *dst, const word_t *src, const size_t wordcount) noexcept
+        {
+            memcpy(dst, src, wordcount * sizeof(word_t));
+        }
+
+        static void move_words(word_t *dst, const word_t *src, const size_t wordcount) noexcept
+        {
+            memmove(dst, src, wordcount * sizeof(word_t));
+        }
+
         static constexpr size_t SIGN_OFF = std::numeric_limits<size_t>::max() - 1;
         static constexpr size_t OWNERSHIP_OFF = std::numeric_limits<size_t>::max() - 2;
         static constexpr size_t SIGN_OFF_OWNERSHIP_OFF = std::numeric_limits<size_t>::max() - 3;
+        static constexpr size_t bits_in_word = sizeof(word_t) << 3;
+        static constexpr word_t msb = MPA_SHIFTBASE << (bits_in_word - 1);
+
+    private:
         static constexpr size_t multable_max_wordsize = 18;
         static constexpr size_t sieve_size = 2048;
         static constexpr size_t divmod_buffer_size = MPA_DIVMOD_BUFFER_SIZE;
@@ -80,8 +107,6 @@ namespace MPA
         inline static thread_local word_t power_buffer[power_buffer_size] = {0};
         inline static thread_local word_t karatsuba_buffer[karatsuba_buffer_size] = {0};
         inline static thread_local size_t karatsuba_buffer_offset = 0;
-        static constexpr size_t bits_in_word = sizeof(word_t) << 3;
-        static constexpr word_t msb = MPA_SHIFTBASE << (bits_in_word - 1);
 
         struct Multable
         {
@@ -139,31 +164,21 @@ namespace MPA
                 return lsize >= rsize ? Multable::funcs[index_lookup[lsize] + rsize - 1](l, r, out)
                                       : Multable::funcs[index_lookup[rsize] + lsize - 1](r, l, out);
             const size_t m = lsize > rsize ? lsize >> 1U : rsize >> 1U;
-            const bool lsize_short = lsize <= m;
-            const bool rsize_short = rsize <= m;
-            const size_t l_high_size = !lsize_short ? lsize - m : 0;
-            const size_t l_low_size = !lsize_short ? m : lsize;
+            const bool lsize_short = lsize <= m, rsize_short = rsize <= m;
+            const size_t l_high_size = !lsize_short ? lsize - m : 0, l_low_size = !lsize_short ? m : lsize;
             const word_t *l_high = !lsize_short ? l + m : nullptr;
-            const size_t r_high_size = !rsize_short ? rsize - m : 0;
-            const size_t r_low_size = !rsize_short ? m : rsize;
-            const word_t *r_high = !rsize_short ? r + m : nullptr;
-            const word_t *l_low = l;
-            const word_t *r_low = r;
-            const bool check_l = l_low_size > l_high_size;
-            const bool check_r = r_low_size > r_high_size;
-            size_t sum_l_size = check_l ? l_low_size + 1 : l_high_size + 1;
-            size_t sum_r_size = check_r ? r_low_size + 1 : r_high_size + 1;
+            const size_t r_high_size = !rsize_short ? rsize - m : 0, r_low_size = !rsize_short ? m : rsize;
+            const word_t *r_high = !rsize_short ? r + m : nullptr, *l_low = l, *r_low = r;
+            const bool check_l = l_low_size > l_high_size, check_r = r_low_size > r_high_size;
+            size_t sum_l_size = check_l ? l_low_size + 1 : l_high_size + 1, sum_r_size = check_r ? r_low_size + 1 : r_high_size + 1;
             size_t z1_size = sum_l_size + sum_r_size;
             const size_t needed_scratch_words = z1_size << 1U;
             const bool dont_require_allocation = karatsuba_buffer_size > needed_scratch_words + karatsuba_buffer_offset;
-            word_t *z0 = out;
-            word_t *tmp;
+            word_t *z0 = out, *tmp;
             word_t *z1 = dont_require_allocation ? (tmp = karatsuba_buffer + karatsuba_buffer_offset, clear_words(tmp, needed_scratch_words),
                                                     karatsuba_buffer_offset += needed_scratch_words, tmp)
                                                  : allocate_words(needed_scratch_words);
-            word_t *z2 = l_high && r_high ? out + 2 * m : nullptr;
-            word_t *sum_l = z1 + z1_size;
-            word_t *sum_r = sum_l + sum_l_size;
+            word_t *z2 = l_high && r_high ? out + 2 * m : nullptr, *sum_l = z1 + z1_size, *sum_r = sum_l + sum_l_size;
             multiply_karatsuba(l_low, r_low, l_low_size, r_low_size, z0);
             const bool carry_l = add_words(!check_l ? l_high : l_low, !check_l ? l_low : l_high,
                                            !check_l ? l_high_size : l_low_size, !check_l ? l_low_size : l_high_size, sum_l);
@@ -192,22 +207,17 @@ namespace MPA
                                                          54, 65, 77, 90, 104, 119, 135, 152, 170};
             if (lsize <= multable_max_wordsize)
                 return Multable::funcs[index_lookup[lsize]](l, l, out);
-            const size_t m = lsize >> 1U;
-            const size_t l_high_size = lsize - m;
-            const size_t l_low_size = m;
-            const word_t *l_high = l + m;
-            const word_t *l_low = l;
+            const size_t m = lsize >> 1U, l_high_size = lsize - m, l_low_size = m;
+            const word_t *l_high = l + m, *l_low = l;
             size_t sum_l_size = l_high_size + 1;
             const size_t needed_scratch_words = 4 * sum_l_size;
             const bool dont_require_allocation = karatsuba_buffer_size > needed_scratch_words + karatsuba_buffer_offset;
-            word_t *z0 = out;
-            word_t *tmp;
+            word_t *z0 = out, *tmp;
             word_t *z1 = dont_require_allocation ? (tmp = karatsuba_buffer + karatsuba_buffer_offset, clear_words(tmp, needed_scratch_words),
                                                     karatsuba_buffer_offset += needed_scratch_words, tmp)
                                                  : allocate_words(needed_scratch_words);
-            word_t *z2 = out + 2 * m;
             size_t z1_size = 2 * sum_l_size;
-            word_t *sum_l = z1 + z1_size;
+            word_t *z2 = out + 2 * m, *sum_l = z1 + z1_size;
             square_karatsuba(l_low, l_low_size, z0);
             const bool carry_l = add_words(l_high, l_low, l_high_size, l_low_size, sum_l);
             z1_size -= 2 * (!carry_l), sum_l_size -= !carry_l;
@@ -215,29 +225,6 @@ namespace MPA
             square_karatsuba(l_high, l_high_size, z2), inplace_decrement(z1, z2, 2 * l_high_size);
             inplace_increment(out + m, z1, 2 * lsize - m < z1_size ? 2 * lsize - m : z1_size);
             dont_require_allocation ? (void)(karatsuba_buffer_offset -= needed_scratch_words) : free(z1);
-        }
-
-        static word_t *allocate_words(const size_t word_count) noexcept
-        {
-            word_t *buffer;
-            if (!(buffer = (word_t *)(calloc(word_count, sizeof(word_t)))))
-                std::cerr << "ERROR: OUT OF MEMORY, ABORT !\n", abort();
-            return buffer;
-        }
-
-        static void clear_words(word_t *dst, const size_t wordcount) noexcept
-        {
-            memset(dst, 0, wordcount * sizeof(word_t));
-        }
-
-        static void copy_words(word_t *dst, const word_t *src, const size_t wordcount) noexcept
-        {
-            memcpy(dst, src, wordcount * sizeof(word_t));
-        }
-
-        static void move_words(word_t *dst, const word_t *src, const size_t wordcount) noexcept
-        {
-            memmove(dst, src, wordcount * sizeof(word_t));
         }
 
         static size_t find_head(const word_t *l, const size_t start_point) noexcept
@@ -352,8 +339,7 @@ namespace MPA
         static void multiply_by_doubleword(const word_t *l, const word_t *r, size_t r_size, word_t *out) noexcept
         {
             dword_t x;
-            const dword_t l_low = l[0];
-            const dword_t l_high = l[1];
+            const dword_t l_low = l[0], l_high = l[1];
             for (size_t i = 0; i < r_size; i += 2)
             {
                 x = l_low * r[i] + out[i];
@@ -424,8 +410,7 @@ namespace MPA
                     out_words[i] = (tmp << bits_shift) | c;
                     c = tmp >> (bits_in_word - bits_shift);
                 }
-                if (c)
-                    in_head += (out_words[in_head + 1] = c, 1);
+                in_head += c ? (out_words[in_head + 1] = c, 1) : 0;
                 move_words(out_words + words_shift, out_words, in_head + 1);
                 clear_words(out_words, words_shift);
             }
@@ -468,31 +453,23 @@ namespace MPA
             };
             const size_t backshift =
                 y_head & 1 ? get_leading_zero_bits(y_words[y_head]) : bits_in_word + get_leading_zero_bits(y_words[y_head]);
-            const size_t backshift_words = backshift / bits_in_word;
-            const size_t backshift_bits = backshift - backshift_words * bits_in_word;
-            word_t *remainder_ptr = need_remainder ? output : workspace;
-            word_t *quot_ptr = need_remainder ? workspace : output;
+            const size_t backshift_words = backshift / bits_in_word, backshift_bits = backshift - backshift_words * bits_in_word;
+            word_t *remainder_ptr = need_remainder ? output : workspace, *quot_ptr = need_remainder ? workspace : output;
             size_t n = shift_left_by_words_and_bits(l_words, l_head, backshift_bits, backshift_words, remainder_ptr) + 1;
             n += (n & 1);
-            const size_t t = y_head + backshift_words + 1;
-            const size_t nn = (n >> 1) - 1;
-            const size_t tt = (t >> 1) - 1;
-            const size_t offset = n - t;
-            word_t *shifted_yabs_ptr = workspace + K;
-            word_t *remainder_correction_ptr = workspace + 2 * K;
+            const size_t t = y_head + backshift_words + 1, nn = (n >> 1) - 1, tt = (t >> 1) - 1, offset = n - t;
+            word_t *shifted_yabs_ptr = workspace + K, *remainder_correction_ptr = workspace + 2 * K;
             word_t *shifted_remainder_correction_ptr = remainder_correction_ptr + offset;
             shift_left_by_words_and_bits(y_words, y_head, backshift_bits, backshift_words, shifted_yabs_ptr + offset);
             const word_t *initial_yabs_ptr = shifted_yabs_ptr + offset;
-            size_t remainder_correction_size = n;
-            size_t shifted_yabs_size = t + offset;
+            size_t remainder_correction_size = n, shifted_yabs_size = t + offset;
             const dword_t divisor = initial_yabs_ptr[t - 2] | ((dword_t)initial_yabs_ptr[t - 1] << bits_in_word);
             word_t y_checker_words[] = {t > 2 ? initial_yabs_ptr[t - 4] : (word_t)0, t > 2 ? initial_yabs_ptr[t - 3] : (word_t)0,
                                         initial_yabs_ptr[t - 2], initial_yabs_ptr[t - 1]};
             bool check = !compare_words(shifted_yabs_ptr, remainder_ptr, n);
             quot_ptr[offset] += check;
             inplace_decrement(remainder_ptr, shifted_yabs_ptr, check ? shifted_yabs_size : 0);
-            const size_t words_to_clear = remainder_correction_size - offset + 2;
-            const size_t loop_bound = !tt ? 1 : tt;
+            const size_t words_to_clear = remainder_correction_size - offset + 2, loop_bound = !tt ? 1 : tt;
             size_t i;
             const auto mul_4_by_2 = Multable::funcs[7];
             for (i = nn; i > loop_bound; --i)
@@ -507,8 +484,7 @@ namespace MPA
                 // first pass of adjusting the estimate
                 word_t estimate_checker_words[6] = {0};
                 mul_4_by_2(y_checker_words, q_words, estimate_checker_words);
-                bool comp = compare_words(estimate_checker_words, remainder_ptr + 2 * i - 4, 6);
-                bool underflow = q_words[0] < comp;
+                bool comp = compare_words(estimate_checker_words, remainder_ptr + 2 * i - 4, 6), underflow = q_words[0] < comp;
                 q_words[0] -= comp, q_words[1] -= underflow;
                 inplace_decrement(estimate_checker_words, y_checker_words, comp ? 4 : 0);
                 comp = compare_words(estimate_checker_words, remainder_ptr + 2 * i - 4, 6);
@@ -546,8 +522,7 @@ namespace MPA
                 word_t estimate_checker_words[6] = {0};
                 mul_4_by_2(y_checker_words, q_words, estimate_checker_words);
                 word_t tmp_words[6] = {0, 0, remainder_ptr[0], remainder_ptr[1], remainder_ptr[2], remainder_ptr[3]};
-                bool comp = compare_words(estimate_checker_words, tmp_words, 6);
-                bool underflow = q_words[0] < comp;
+                bool comp = compare_words(estimate_checker_words, tmp_words, 6), underflow = q_words[0] < comp;
                 q_words[0] -= comp, q_words[1] -= underflow;
                 inplace_decrement(estimate_checker_words, y_checker_words, comp ? 4 : 0);
                 comp = compare_words(estimate_checker_words, tmp_words, 6);
@@ -588,8 +563,7 @@ namespace MPA
                         remainder_ptr[i] = (tmp >> backshift_bits) | c;
                         c = (tmp & ((MPA_SHIFTBASE << backshift_bits) - 1)) << (bits_in_word - backshift_bits);
                     }
-                    if (remainder_head && !remainder_ptr[remainder_head])
-                        remainder_head -= 1;
+                    remainder_head -= (remainder_head && !remainder_ptr[remainder_head]);
                 }
                 return remainder_head << 2U;
             }
@@ -600,8 +574,7 @@ namespace MPA
 
         static constexpr std::array<uint32_t, sieve_size> primes_sieve = []()
         {
-            constexpr uint16_t biggest_prime = 17863;
-            constexpr uint16_t biggest_prime_sqrt = 133;
+            constexpr uint16_t biggest_prime = 17863, biggest_prime_sqrt = 133;
             std::array<uint32_t, sieve_size> out{0};
             size_t idx = 0;
             out[idx++] = 2;
@@ -676,10 +649,8 @@ namespace MPA
 
         static size_t add(const Integer &l, const Integer &r, word_t *out_words) noexcept
         {
-            const size_t l_head = l.get_head();
-            const size_t r_head = r.get_head();
-            const size_t bigger_head = l_head > r_head ? l_head : r_head;
-            const size_t smaller_head = l_head < r_head ? l_head : r_head;
+            const size_t l_head = l.get_head(), r_head = r.get_head();
+            const size_t bigger_head = l_head > r_head ? l_head : r_head, smaller_head = l_head < r_head ? l_head : r_head;
             if (l.is_negative() == r.is_negative())
             {
                 DO_ADD(l, r, bigger_head, smaller_head);
@@ -692,10 +663,8 @@ namespace MPA
 
         static size_t subtract(const Integer &l, const Integer &r, word_t *out_words) noexcept
         {
-            const size_t l_head = l.get_head();
-            const size_t r_head = r.get_head();
-            const size_t bigger_head = l_head > r_head ? l_head : r_head;
-            const size_t smaller_head = l_head < r_head ? l_head : r_head;
+            const size_t l_head = l.get_head(), r_head = r.get_head();
+            const size_t bigger_head = l_head > r_head ? l_head : r_head, smaller_head = l_head < r_head ? l_head : r_head;
             if (l.is_negative() != r.is_negative())
             {
                 DO_ADD(l, r, bigger_head, smaller_head);
@@ -708,8 +677,7 @@ namespace MPA
 
         static size_t multiply(const Integer &l, const Integer &r, word_t *out_words) noexcept
         {
-            const size_t lsize = l.get_word_count();
-            const size_t rsize = r.get_word_count();
+            const size_t lsize = l.get_word_count(), rsize = r.get_word_count();
             (l.words == r.words && lsize == rsize) ? square_karatsuba(l.words, lsize, out_words)
                                                    : multiply_karatsuba(l.words, r.words, lsize, rsize, out_words);
             size_t out_head = find_head(out_words, lsize + rsize - 1);
@@ -719,15 +687,12 @@ namespace MPA
 
         static size_t call_divmod(const Integer &l, const Integer &r, word_t *out_words, bool need_remainder = false) noexcept
         {
-            const size_t l_head = l.get_head();
-            const size_t r_head = r.get_head();
-            const size_t K = l_head + 5;
+            const size_t l_head = l.get_head(), r_head = r.get_head(), K = l_head + 5;
             if (!need_remainder)
             {
                 if (r_head > l_head)
                     return out_words[0] = 0, 0;
-                word_t *quot_ptr = out_words;
-                word_t *workspace;
+                word_t *quot_ptr = out_words, *workspace;
                 const bool require_allocation = 3 * K > divmod_buffer_size;
                 workspace = !require_allocation ? clear_words(divmod_buffer, 3 * K), divmod_buffer
                                                 : allocate_words(3 * K);
@@ -736,8 +701,7 @@ namespace MPA
                 const bool quotient_is_negative = !(l.is_negative() == r.is_negative() || quotient_is_zero);
                 return require_allocation ? free(workspace) : (void)0, quotient_is_negative | quot_flags;
             }
-            word_t *remainder_ptr = out_words;
-            word_t *workspace;
+            word_t *remainder_ptr = out_words, *workspace;
             const bool require_allocation = 3 * K > divmod_buffer_size;
             workspace = !require_allocation ? clear_words(divmod_buffer, 3 * K), divmod_buffer
                                             : allocate_words(3 * K);
@@ -865,8 +829,6 @@ namespace MPA
 
         std::string to_decimal() const noexcept
         {
-            static constexpr word_t magic1 = DecimalMagic::number1;
-            static constexpr word_t magic2 = DecimalMagic::number2;
             if (is_zero())
                 return "0";
             std::vector<uint32_t> digits;
@@ -886,11 +848,11 @@ namespace MPA
                         ((word_t)(dividend_low - remainder) >> 1U) + (dividend_high != 0) *
                                                                          ((dividend_low < remainder && !(dividend_high & 1U)) +
                                                                           (dividend_low >= remainder && (dividend_high & 1U))) *
-                                                                         magic2;
+                                                                         DecimalMagic::number2;
                     if constexpr (std::is_same_v<uint16_t, word_t>)
-                        tmp[i] = magic1 * (uint32_t)rhs; // avoid potential ub caused by promotion :)
+                        tmp[i] = DecimalMagic::number1 * (uint32_t)rhs; // avoid potential ub caused by promotion :)
                     else
-                        tmp[i] = magic1 * rhs;
+                        tmp[i] = DecimalMagic::number1 * rhs;
                 }
                 digits.push_back(remainder), tmp_head = find_head(tmp, tmp_size - 1);
             }
@@ -928,8 +890,7 @@ namespace MPA
                 return *this;
             if (has_ownership()) // release our buffer if we have ownership
                 free(words);
-            words = N.words;
-            flags = N.flags;
+            words = N.words, flags = N.flags;
             return N.flags &= OWNERSHIP_OFF, *this; // clear (ownership) flags for N
         }
 
@@ -937,8 +898,7 @@ namespace MPA
         {
             if (!shift || is_zero())
                 return *this;
-            const size_t words_shift = shift / bits_in_word;
-            const size_t wordcount = get_head() + words_shift + 2;
+            const size_t words_shift = shift / bits_in_word, wordcount = get_head() + words_shift + 2;
             word_t *out_words = allocate_words(wordcount);
             const size_t out_head =
                 shift_left_by_words_and_bits(words, get_head(), shift & (bits_in_word - 1), words_shift, out_words);
@@ -952,8 +912,7 @@ namespace MPA
             const size_t shift_words = shift / bits_in_word;
             if (get_word_count() <= shift_words)
                 return Integer(0);
-            const size_t shift_bits = shift & (bits_in_word - 1);
-            const size_t wc = get_word_count() - shift_words;
+            const size_t shift_bits = shift & (bits_in_word - 1), wc = get_word_count() - shift_words;
             word_t *out_ptr = allocate_words(wc);
             copy_words(out_ptr, words + shift_words, wc);
             size_t out_head = wc - 1;
@@ -966,8 +925,7 @@ namespace MPA
                     out_ptr[i] = (tmp >> shift_bits) | c;
                     c = (tmp & ((MPA_SHIFTBASE << shift_bits) - 1)) << (bits_in_word - shift_bits);
                 }
-                if (out_head && !out_ptr[out_head])
-                    out_head -= 1;
+                out_head -= (out_head && !out_ptr[out_head]);
             }
             return Integer(out_ptr, is_negative() | 0b10 | (out_head << 2U));
         }
@@ -1094,9 +1052,7 @@ namespace MPA
 
         Integer &operator/=(const Integer &r) noexcept
         {
-            const size_t l_head = get_head();
-            const size_t r_head = r.get_head();
-            const size_t K = l_head + 5;
+            const size_t l_head = get_head(), r_head = r.get_head(), K = l_head + 5;
             if (r_head > l_head)
                 return (words[0] = 0, flags = has_ownership() << 1U, *this);
             word_t *workspace;
@@ -1143,8 +1099,7 @@ namespace MPA
                     words[i] = (tmp >> shift_bits) | c;
                     c = (tmp & ((MPA_SHIFTBASE << shift_bits) - 1)) << (bits_in_word - shift_bits);
                 }
-                if (out_head && !words[out_head])
-                    out_head -= 1;
+                out_head -= (out_head && !words[out_head]);
             }
             if (shift_words)
                 clear_words(&words[out_head + 1], shift_words);
@@ -1172,8 +1127,7 @@ namespace MPA
                 words_size = string_size & (characters_per_word - 1) ? (string_size / characters_per_word) + 1
                                                                      : string_size / characters_per_word;
                 words = allocate_words(words_size);
-                size_t current_pos = string_size - 1;
-                size_t word_index = words_size - 1;
+                size_t current_pos = string_size - 1, word_index = words_size - 1;
                 while (true)
                 {
                     if (current_pos >= characters_per_word)
@@ -1209,10 +1163,8 @@ namespace MPA
                 word_t *tmp3_ptr = local_workspace + needed_words_size;
                 word_t *base_ptr = local_workspace + 2 * needed_words_size;
                 word_t _digit = effective_[string_size - 1] - '0';
-                *base_ptr = 1;
-                *word_ptr = _digit;
-                Integer future_this(word_ptr, 0);
-                Integer base(base_ptr, 0);
+                *base_ptr = 1, *word_ptr = _digit;
+                Integer future_this(word_ptr, 0), base(base_ptr, 0);
                 for (size_t i = 1; i < string_size; ++i)
                 {
                     clear_words(tmp2_ptr, needed_words_size);
@@ -1473,13 +1425,11 @@ namespace MPA
             return Integer<word_t>(1);
         const size_t prodsize = base.get_word_count() * exponent;
         word_t *local_workspace = Integer<word_t>::allocate_words(prodsize * 2);
-        word_t *p_ptr = Integer<word_t>::allocate_words(prodsize);
-        word_t *q_ptr = local_workspace;
+        word_t *p_ptr = Integer<word_t>::allocate_words(prodsize), *q_ptr = local_workspace;
         word_t *stash_ptr = local_workspace + prodsize;
         Integer<word_t>::copy_words(p_ptr, base.words, base.get_word_count());
         Integer<word_t>::copy_words(q_ptr, base.words, base.get_word_count());
-        Integer<word_t> p(p_ptr, base.flags);
-        Integer<word_t> q(q_ptr, base.flags & Integer<word_t>::OWNERSHIP_OFF);
+        Integer<word_t> p(p_ptr, base.flags), q(q_ptr, base.flags & Integer<word_t>::OWNERSHIP_OFF);
         size_t j = Integer<word_t>::get_trailing_zero_bits(exponent);
         exponent >>= j;
         const word_t p_is_negative = p.is_negative();
@@ -1507,26 +1457,18 @@ namespace MPA
         word_t *local_workspace = !workspace ? Integer<word_t>::allocate_words(max_size * 2 * 8 + max_size + 4) : workspace;
 
         const size_t offset = 2 * max_size;
-        word_t *r0_ptr = local_workspace;
-        word_t *r1_ptr = r0_ptr + offset;
+        word_t *r0_ptr = local_workspace, *r1_ptr = r0_ptr + offset;
         Integer<word_t>::copy_words(r0_ptr, x.words, x.get_word_count());
         Integer<word_t>::copy_words(r1_ptr, y.words, y.get_word_count());
-        Integer<word_t> r0(r0_ptr, x.get_head() << 2U);
-        Integer<word_t> r1(r1_ptr, y.get_head() << 2U);
-        word_t *s0_ptr = r1_ptr + offset;
-        word_t *s1_ptr = s0_ptr + offset;
+        Integer<word_t> r0(r0_ptr, x.get_head() << 2U), r1(r1_ptr, y.get_head() << 2U);
+        word_t *s0_ptr = r1_ptr + offset, *s1_ptr = s0_ptr + offset;
         *s0_ptr = 1;
-        Integer<word_t> s0(s0_ptr, 0);
-        Integer<word_t> s1(s1_ptr, 0);
-        word_t *t0_ptr = s1_ptr + offset;
-        word_t *t1_ptr = t0_ptr + offset;
+        Integer<word_t> s0(s0_ptr, 0), s1(s1_ptr, 0);
+        word_t *t0_ptr = s1_ptr + offset, *t1_ptr = t0_ptr + offset;
         *t1_ptr = 1;
-        Integer<word_t> t0(t0_ptr, 0);
-        Integer<word_t> t1(t1_ptr, 0);
-        word_t *tmp_ptr = t1_ptr + offset;
-        word_t *tmp_prod_ptr = tmp_ptr + offset;
-        Integer<word_t> tmp(tmp_ptr, 0);
-        Integer<word_t> tmp_prod(tmp_prod_ptr, 0);
+        Integer<word_t> t0(t0_ptr, 0), t1(t1_ptr, 0);
+        word_t *tmp_ptr = t1_ptr + offset, *tmp_prod_ptr = tmp_ptr + offset;
+        Integer<word_t> tmp(tmp_ptr, 0), tmp_prod(tmp_prod_ptr, 0);
         word_t *quot_ptr = tmp_prod_ptr + offset;
         Integer<word_t> q(quot_ptr, 0);
 
@@ -1534,10 +1476,8 @@ namespace MPA
         {
             word_t *stash_ptr = l.words;
             const size_t stash_flags = l.flags;
-            l.words = r.words;
-            l.flags = r.flags;
-            r.words = stash_ptr;
-            r.flags = stash_flags;
+            l.words = r.words, l.flags = r.flags;
+            r.words = stash_ptr, r.flags = stash_flags;
         };
 
         const auto euklid_step = [&swap_integers, &tmp, &tmp_prod, &q](Integer<word_t> &x0, Integer<word_t> &x1)
@@ -1585,9 +1525,7 @@ namespace MPA
 
         while (!r1.is_zero())
         {
-            const size_t r0_head = r0.get_head();
-            const size_t r1_head = r1.get_head();
-            const size_t K = r0_head + 5;
+            const size_t r0_head = r0.get_head(), r1_head = r1.get_head(), K = r0_head + 5;
             if (r1_head > r0_head || r1 > r0)
                 q.flags = (*quot_ptr = 0, 0);
             else
@@ -1708,19 +1646,14 @@ namespace MPA
         mue_ptr[modulus_size * 2] = 1;
         *p_ptr = 1;
 
-        Integer<word_t> p(p_ptr, 0);
-        Integer<word_t> q(q_ptr, 0);
-        Integer<word_t> d(d_ptr, exponent.flags & Integer<word_t>::SIGN_OFF_OWNERSHIP_OFF);
+        Integer<word_t> p(p_ptr, 0), q(q_ptr, 0), d(d_ptr, exponent.flags & Integer<word_t>::SIGN_OFF_OWNERSHIP_OFF);
         Integer<word_t> mue(mue_ptr, (modulus_size * 2) << 2U);
         mue /= modulus;
-        const size_t mue_size = mue.get_word_count();
-        const size_t k = modulus.get_word_count();
+        const size_t mue_size = mue.get_word_count(), k = modulus.get_word_count();
 
         const auto mod_op = [&prodsize, &modulus, &stash_ptr](Integer<word_t> &s)
         {
-            const size_t l_head = s.get_head();
-            const size_t r_head = modulus.get_head();
-            const size_t K = l_head + 5;
+            const size_t l_head = s.get_head(), r_head = modulus.get_head(), K = l_head + 5;
             word_t *remainder_ptr = s.words;
             const size_t remainder_size = prodsize;
             Integer<word_t>::copy_words(stash_ptr, s.words, s.get_word_count());
@@ -1799,8 +1732,7 @@ namespace MPA
         const size_t effective_base_squared_size = q.get_word_count();
         for (size_t j = 1; j < precomp_size; ++j)
         {
-            word_t *src = lookup_table + (j - 1) * prodsize;
-            word_t *target = lookup_table + j * prodsize;
+            word_t *src = lookup_table + (j - 1) * prodsize, *target = lookup_table + j * prodsize;
             size_t src_size = (memcpy(&src_size, src + modulus_size, sizeof(size_t)), (src_size >> 2U) + 1);
             Integer<word_t>::multiply_karatsuba(src, q.words, src_size, effective_base_squared_size, target);
             Integer<word_t> tmp(target, Integer<word_t>::find_head(target, src_size + effective_base_squared_size - 1) << 2U);
@@ -1940,8 +1872,7 @@ namespace MPA
             const size_t base_squared_size = q.get_word_count();
             for (size_t j = 1; j < precomp_size; ++j)
             {
-                word_t *src = lookup_table + (j - 1) * max_prodsize;
-                word_t *target = lookup_table + j * max_prodsize;
+                word_t *src = lookup_table + (j - 1) * max_prodsize, *target = lookup_table + j * max_prodsize;
                 size_t src_size = (memcpy(&src_size, src + modulus_size, sizeof(size_t)), (src_size >> 2U) + 1);
                 Integer<word_t>::multiply_karatsuba(src, q.words, src_size, base_squared_size, target);
                 Integer<word_t> tmp(target, Integer<word_t>::find_head(target, src_size + base_squared_size - 1) << 2U);
