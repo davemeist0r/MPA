@@ -496,7 +496,7 @@ namespace MPA
                     inplace_decrement(remainder_correction_ptr, shifted_yabs_ptr, shifted_yabs_size);
                 }
                 // finally, set the quotient words
-                copy_words(quot_ptr + 2 * (i - tt - 1), q_words, q_words[1] ? 2 : 1);
+                copy_words(quot_ptr + 2 * (i - tt - 1), q_words, 2);
                 // and update remainder
                 inplace_decrement(remainder_ptr, remainder_correction_ptr, remainder_correction_size);
                 remainder_correction_size -= 2;
@@ -534,7 +534,7 @@ namespace MPA
                     inplace_decrement(remainder_correction_ptr, shifted_yabs_ptr, shifted_yabs_size);
                 }
                 // finally, set the quotient words
-                copy_words(quot_ptr, q_words, q_words[1] ? 2 : 1);
+                copy_words(quot_ptr, q_words, 2);
                 // and update remainder
                 inplace_decrement(remainder_ptr, remainder_correction_ptr, remainder_correction_size);
             }
