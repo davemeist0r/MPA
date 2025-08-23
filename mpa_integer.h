@@ -247,10 +247,9 @@ namespace MPA
         static bool add_words(const word_t *bigger, const word_t *smaller, const size_t bigger_size, const size_t smaller_size,
                               word_t *total_sum) noexcept
         {
-            word_t carry = 0;
+            word_t carry = 0, current_carry;
             for (size_t i = 0; i < smaller_size; ++i)
             {
-                word_t current_carry;
                 const word_t sum = add_overflow(bigger[i], smaller[i], current_carry);
                 total_sum[i] = add_overflow(sum, carry, carry);
                 carry += current_carry;
@@ -263,11 +262,10 @@ namespace MPA
         static void subtract_words(const word_t *bigger, const word_t *smaller, const size_t bigger_head, const size_t smaller_head,
                                    word_t *total_diff, size_t &total_diff_head) noexcept
         {
-            word_t carry = 0;
+            word_t carry = 0, current_carry;
             total_diff_head = 0; // safe guard !
             for (size_t i = 0; i <= smaller_head; ++i)
             {
-                word_t current_carry;
                 const word_t diff = sub_underflow(bigger[i], smaller[i], current_carry);
                 total_diff_head = (total_diff[i] = sub_underflow(diff, carry, carry)) ? i : total_diff_head;
                 carry += current_carry;
@@ -308,32 +306,28 @@ namespace MPA
 
         static void inplace_decrement(word_t *minuend, const word_t *subtrahend, const size_t subtrahend_size)
         {
-            word_t carry = 0;
+            word_t carry = 0, current_carry;
             size_t j = 0;
             for (j = 0; j < subtrahend_size; ++j)
             {
-                word_t current_carry;
                 const word_t diff = sub_underflow(minuend[j], subtrahend[j], current_carry);
                 minuend[j] = sub_underflow(diff, carry, carry);
                 carry += current_carry;
             }
-            while (carry)
-                j += (minuend[j] = sub_underflow(minuend[j], carry, carry), 1);
+            for (; carry; j += (minuend[j] = sub_underflow(minuend[j], carry, carry), 1));
         }
 
         static void inplace_increment(word_t *final_sum, const word_t *summand, const size_t summand_size) noexcept
         {
-            word_t carry = 0;
+            word_t carry = 0, current_carry;
             size_t j = 0;
             for (j = 0; j < summand_size; ++j)
             {
-                word_t current_carry;
                 word_t sum = add_overflow(final_sum[j], summand[j], current_carry);
                 final_sum[j] = add_overflow(sum, carry, carry);
                 carry += current_carry;
             }
-            while (carry)
-                j += (final_sum[j] = add_overflow(final_sum[j], carry, carry), 1);
+            for (; carry; j += (final_sum[j] = add_overflow(final_sum[j], carry, carry), 1));
         }
 
         static void multiply_by_doubleword(const word_t *l, const word_t *r, size_t r_size, word_t *out) noexcept
@@ -372,8 +366,7 @@ namespace MPA
             if (!A)
                 return bits_in_word;
             size_t count = 0;
-            while (A < (MPA_SHIFTBASE << (bits_in_word - 1)))
-                count += (A <<= 1U, 1);
+            for (; A < (MPA_SHIFTBASE << (bits_in_word - 1)); count += (A <<= 1U, 1));
             return count;
         }
 
@@ -382,8 +375,7 @@ namespace MPA
             if (!A)
                 return 0;
             size_t count = 0;
-            while (!(A & 1))
-                count += (A >>= 1U, 1);
+            for (; !(A & 1); count += (A >>= 1U, 1));
             return count;
         }
 
@@ -1364,15 +1356,13 @@ namespace MPA
                 clear_words(out_words, limit.get_word_count());
                 for (size_t i = 0; i < limit_byte_count; ++i)
                     out_head = i / sizeof(word_t), out_words[out_head] |= dist(rng) << ((i % sizeof(word_t)) * 8);
-                while (!out_words[out_head])
-                    out_words[out_head] = dist(rng);
+                for (; !out_words[out_head]; out_words[out_head] = dist(rng));
                 Integer out(out_words, (buffer ? 0 : 0b10) | (out_head << 2U));
                 if (out < unsigned_limit)
                     return out;
             }
         }
 
-    public:
         word_t *words;
         size_t flags;
 
