@@ -174,7 +174,6 @@ namespace
     void serialize_head_private_key(std::vector<uint8_t> &bytes, const word_t leading_word, const size_t bytesize)
     {
         for (size_t j = 0; j < bits_in_word / 8; ++j)
-        {
             if (((leading_word >> ((bits_in_word - 8) - j * 8)) & 255) || j == bits_in_word / 8 - 1)
             {
                 bytes.push_back(2); // type tag for int
@@ -187,7 +186,6 @@ namespace
                     bytes.push_back((leading_word >> ((bits_in_word - 8) - i * 8)) & 255);
                 return;
             }
-        }
     }
 
     void DER_serialize(std::vector<uint8_t> &bytes, const Integer &x)
@@ -202,7 +200,6 @@ namespace
     void serialize_head_ssh_public_key(std::vector<uint8_t> &bytes, const word_t leading_word)
     {
         for (size_t j = 0; j < bits_in_word / 8; ++j)
-        {
             if (((leading_word >> ((bits_in_word - 8) - j * 8)) & 255) || j == bits_in_word / 8 - 1)
             {
                 const bool MSB_set = ((leading_word >> ((bits_in_word - 8) - j * 8)) & 255) & 128;
@@ -217,7 +214,6 @@ namespace
                     bytes.push_back((leading_word >> ((bits_in_word - 8) - i * 8)) & 255);
                 break;
             }
-        }
     }
 }
 
@@ -644,10 +640,8 @@ bool read_rsa_public_key_file(const std::string &filepath)
         return std::cerr << "ERROR! Unable to open rsa public key file!\n", false;
     std::vector<uint8_t> tmp;
     while (getline(file, line))
-    {
         for (const auto character : line)
             tmp.push_back(character);
-    }
     std::vector<uint8_t> b64;
     size_t i;
     for (i = 0; i < tmp.size() && tmp[i] != ' '; ++i);
