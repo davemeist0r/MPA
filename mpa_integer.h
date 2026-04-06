@@ -236,12 +236,12 @@ namespace MPA
 
         static word_t add_overflow(const word_t a, const word_t b, word_t &overflow) noexcept
         {
-            return (overflow = a > std::numeric_limits<word_t>::max() - b, a + b);
+            return overflow = a > std::numeric_limits<word_t>::max() - b, a + b;
         }
 
         static word_t sub_underflow(const word_t a, const word_t b, word_t &underflow) noexcept
         {
-            return (underflow = a < b, a - b);
+            return underflow = a < b, a - b;
         }
 
         static bool add_words(const word_t *bigger, const word_t *smaller, const size_t bigger_size, const size_t smaller_size,
